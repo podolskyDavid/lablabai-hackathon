@@ -14,6 +14,7 @@ def general_summary(df, n=10):
     Returns:
     - Instructions what transformations to do in general based on a view of the data. 
     """
+    # TODO: use only this function as input to tool_making(), possibly experiment with adding some more stats to the prompt
     head = df.head(n)
     buf = io.StringIO()
     df.info(buf=buf)

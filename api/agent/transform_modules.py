@@ -5,17 +5,20 @@ import random
 import string
 import re
 import numpy as np
-from sklearn.preprocessing import Imputer, StandardScaler, MinMaxScaler, LabelEncoder, PolynomialFeatures
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder, PolynomialFeatures
 from fuzzywuzzy import process
 from sklearn.linear_model import LinearRegression
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.stem import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from gensim.models import Word2Vec
-from sklearn.decomposition import PCA, TSNE
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from statsmodels.tsa.seasonal import seasonal_decompose
 from nltk.corpus import stopwords
+import nltk
 nltk.download('stopwords') 
 
 def fill_missing_values(df, col, value="Unknown"):
