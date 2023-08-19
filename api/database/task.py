@@ -1,8 +1,13 @@
+from io import StringIO
+
+import requests
+
 from client import table, bucket
 from typing import *
 import os
 import re
 from pandas import DataFrame
+import pandas as pd
 
 
 class Task:
@@ -33,6 +38,13 @@ class Task:
             # find max step id within an existing task
             step_counts: List = table.select('task_id, step_count').eq('task_id', self.task_id).execute().data
             self.max_step_count = max([int(c['step_count']) for c in step_counts])
+
+    def get_latest_df(self) -> DataFrame:
+        """ Get the DataFrame corresponding to the latest step in the task """
+        url = table.select('df_after').eq('task_id', self.task_id).eq('step_count', self.max_step_count).execute().data[0]['df_after']
+        csv_string = requests.get(url).text
+        df: DataFrame = pd.read_csv(StringIO(csv_string))
+        return df
 
     def upload_new_step(self, transformation: str, explanation: str, df_after: DataFrame, df_frontend: DataFrame):
         """ Upload a new step in the task to the DB """
@@ -68,18 +80,16 @@ class Task:
 
 if __name__ == '__main__':
     my_df = DataFrame({'a': [1, 2, 3]})
-    task = Task(user_id='alex@example.com', task_name="Alex's Task", initial_df=my_df, initial_df_frontend=my_df)
-    task.upload_new_step('lambda x: x', 'Alex transformation 1 - no change', my_df, my_df)
+    # Create a new task for Alex
+    # task = Task(user_id='alex@example.com', task_name="Alex's Task", initial_df=my_df, initial_df_frontend=my_df)
+    # task.upload_new_step('lambda x: x', 'Alex transformation 1 - no change', my_df, my_df)
 
-    task = Task(user_id='nico@example.com', task_name="Nico's Task", initial_df=my_df, initial_df_frontend=my_df)
-    # task = Task(user_id='nico@example.com', task_name='some task')
-    task.upload_new_step('lambda x: x', 'Nico transformation 1 - no change', my_df, my_df)
-    task.upload_new_step('lambda x: x', 'Nico transformation 2 - no change', my_df, my_df)
-    task.upload_new_step('lambda x: x', 'Nico transformation 3 - no change', my_df, my_df)
-    # print(task.task_id, task.user_id, task.max_step_count)
-
-    # with open('test_csv/test.csv', 'rb') as f:
-    #     res = bucket.upload('test3.csv', f)
-    #     print(res)
-    #     print(bucket.get_public_url('test1.csv'))
-
+    # Create a new task for Nico
+    # task = Task(user_id='nico@example.com', task_name="Nico's Task", initial_df=my_df, initial_df_frontend=my_df)
+    # Retrieve Nico's task with task_id 2
+    task = Task(user_id='nico@example.com', task_id=2)
+    # task.upload_new_step('lambda x: x', 'Nico transformation with a change', DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), my_df)
+    # task.upload_new_step('lambda x: x', 'Nico transformation 2 - no change', my_df, my_df)
+    # task.upload_new_step('lambda x: x', 'Nico transformation 3 - no change', my_df, my_df)
+    df = task.get_latest_df()
+    print(df)
