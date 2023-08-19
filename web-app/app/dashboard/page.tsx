@@ -1,4 +1,5 @@
 import React from 'react';
+import {useRouter, useSearchParams, useParams } from 'next/navigation'
 
 import {
     Table,
@@ -12,6 +13,7 @@ import {
 import {Button} from "@/components/ui/button"
 import {Textarea} from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { createClient } from '@supabase/supabase-js'
 
 const tags = Array.from({ length: 15 }).map(
     (_, i, a) => `v1.2.0-beta.${a.length - i}`
@@ -32,53 +34,24 @@ function AgentStepsArea() {
     )
 }
 
-const invoices = [
-    {
-        invoice: "INV001",
-        paymentStatus: "Paid",
-        totalAmount: "$250.00",
-        paymentMethod: "Credit Card",
-    },
-    {
-        invoice: "INV002",
-        paymentStatus: "Pending",
-        totalAmount: "$150.00",
-        paymentMethod: "PayPal",
-    },
-    {
-        invoice: "INV003",
-        paymentStatus: "Unpaid",
-        totalAmount: "$350.00",
-        paymentMethod: "Bank Transfer",
-    },
-    {
-        invoice: "INV004",
-        paymentStatus: "Paid",
-        totalAmount: "$450.00",
-        paymentMethod: "Credit Card",
-    },
-    {
-        invoice: "INV005",
-        paymentStatus: "Paid",
-        totalAmount: "$550.00",
-        paymentMethod: "PayPal",
-    },
-    {
-        invoice: "INV006",
-        paymentStatus: "Pending",
-        totalAmount: "$200.00",
-        paymentMethod: "Bank Transfer",
-    },
-    {
-        invoice: "INV007",
-        paymentStatus: "Unpaid",
-        totalAmount: "$300.00",
-        paymentMethod: "Credit Card",
-    },
-]
 
 
-export default function Dashboard() {
+async function getTasksByUser(email: string) {
+    const supabase = createClient('https://eiruqjgfkgoknuhihfha.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpcnVxamdma2dva251aGloZmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTI0MzQxNTcsImV4cCI6MjAwODAxMDE1N30.HKZHbuiB2r8NN367J0LkD2UgwhaqJS2f0Ux9ezCFETA')
+    const {data, error} = await supabase
+    .from('db_steps')
+    .select()
+    .eq('user_id', email)
+    console.log("data")
+    console.log(email)
+    console.log(data)
+    return data;
+}
+
+
+export default async function Dashboard() {
+    const invoices = getTasksByUser("alex@example.com")
+    const resolvedData: any[] | null = await invoices;
     return (
         <div className="flex flex-col lg:flex-row h-screen">
             <div className="lg:w-7/12 bg-transparent p-4 border border-white rounded-sm m-4">
@@ -93,14 +66,16 @@ export default function Dashboard() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {invoices.map((invoice) => (
-                            <TableRow key={invoice.invoice}>
-                                <TableCell className="font-medium">{invoice.invoice}</TableCell>
-                                <TableCell>{invoice.paymentStatus}</TableCell>
-                                <TableCell>{invoice.paymentMethod}</TableCell>
-                                <TableCell className="text-right">{invoice.totalAmount}</TableCell>
-                            </TableRow>
-                        ))}
+                        {resolvedData !== null &&
+                            resolvedData.map((invoice) => (
+                                <TableRow key={invoice.invoice}>
+                                    <TableCell className="font-medium">{invoice.invoice}</TableCell>
+                                    <TableCell>{invoice.paymentStatus}</TableCell>
+                                    <TableCell>{invoice.paymentMethod}</TableCell>
+                                    <TableCell className="text-right">{invoice.totalAmount}</TableCell>
+                                </TableRow>
+                            ))
+                        }
                     </TableBody>
                 </Table>
             </div>
