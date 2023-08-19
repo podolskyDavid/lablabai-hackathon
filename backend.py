@@ -14,7 +14,7 @@ app = FastAPI()
 def read_root():
     return {"hello": "world"}
 
-api_keys_location = os.path.join(os.path.expanduser("~"), ".openai_keys")
+api_keys_location = os.path.join(".openai_keys")
 
 def create_template_ini_file():
     """
@@ -26,6 +26,7 @@ def create_template_ini_file():
             f.write("[openai]\n")
             f.write("organization_id = your_organization_id\n")
             f.write("secret_key = your_secret_key\n")
+
 
 def initialize_openai_api():
     """
@@ -48,11 +49,11 @@ def generate(prompt):
     message = {"role": "user", "content": prompt}
     messages = [message]
 
-    response = openai.chatcompletion.create(
+    response = openai.ChatCompletion.create(
             model='gpt-3.5-turbo',
             messages=messages,
             max_tokens=1000,
-            stream=true,
+            stream=True,
             )
 
     text_all = ''
@@ -76,10 +77,18 @@ def generate_feature(csv_text, generation_instruction):
     # csv_text is already the text of the csv file, just parse it
     os.makedirs('tmp', exist_ok=True)
     tmp_file = os.path.join('tmp', f'{uuid.uuid4()}.csv')
+
+    # split on  \n
+    csv_text_lines = csv_text.split('\\n')
+
     with open(tmp_file, 'w') as f:
-        f.write(csv_text)
+        # f.write(csv_text)
+        for line in csv_text_lines:
+            f.write(line)
+            f.write('\n')
 
     df = pd.read_csv(tmp_file)
+    print("df:", df)
 
 
 
@@ -95,14 +104,21 @@ def generate_feature(csv_text, generation_instruction):
     # add column to new dataframe 'new_column'
     df_new['new_column'] = None
 
-    for i, row in enumerate(df.iterrows()):
+    i = 0
+    # for i, row in enumerate(df.iterrows()):
+    for row in df.iterrows():
+        print("row:", row)
+        print(f'i: {i}')
         prompt = f'those are the existing values in the row:\n'
         prompt += f'{row}\n'
         prompt += f'please generate a new value using the following instruction: "{generation_instruction}"\n'
         prompt += 'respond just with the generated value and nothing else, no explanation needed'
         generated_value = generate(prompt)
+        print("generated_value:", generated_value)
         df_new.at[i, 'new_column'] = generated_value
+        i += 1
 
+    print("df_new:", df_new)
     # return df_new.to_csv(index=false)
     return df_new.to_csv()
 
