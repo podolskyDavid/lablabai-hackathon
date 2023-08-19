@@ -5,7 +5,9 @@ from sklearn.feature_selection import VarianceThreshold
 import io
 
 from api.src.database import Task
-from api.src.detection.util import get_steps_from_infos, Steps
+from api.src.detection.util import get_steps_from_summary, Steps
+
+Steps = Steps
 
 class Detector:
     """Detects and creates a list of instructions using the OpenAI API to transform a DataFrame."""
@@ -21,7 +23,7 @@ class Detector:
     def get_steps_from_initial_df(self, df) -> Steps:
         """ Detects and creates a list of instructions for an initial DataFrame """
         infos = self.get_initial_summary(df)
-        steps = get_steps_from_infos(infos)
+        steps = get_steps_from_summary(infos)
         return steps
 
     def get_summary_from_former_steps(self, df) -> Dict[str, str]:
@@ -33,9 +35,8 @@ class Detector:
     def get_steps_from_former_steps(self, df) -> Steps:
         """ Detects and creates a list of instructions for a DataFrame based on information from steps it's already made """
         infos = self.get_summary_from_former_steps(df)
-        steps = get_steps_from_infos(infos)
+        steps = get_steps_from_summary(infos)
         return steps
-
 
 
 def general_summary(df, n=10):
@@ -49,7 +50,7 @@ def general_summary(df, n=10):
     Returns:
     - Instructions what transformations to do in general based on a view of the data.
     """
-    # TODO: use this function as input to tool_making(), possibly experiment with adding some more stats to the prompt
+    # TODO: use this function as input to make_tool(), possibly experiment with adding some more stats to the prompt
     head = df.head(n)
     buf = io.StringIO()
     df.info(buf=buf)
@@ -63,10 +64,6 @@ def general_summary(df, n=10):
     }
 
     return infos
-
-    # steps = get_steps_from_infos(df, infos)
-    #
-    # return steps
 
 
 # def datatype_summary(df):
@@ -85,7 +82,7 @@ def general_summary(df, n=10):
 #         'Columns': df.columns,
 #     })
 #
-#     steps = get_steps_from_infos(df, overview)
+#     steps = get_steps_from_summary(df, overview)
 #
 #     return steps
 
@@ -112,9 +109,6 @@ def unique_values_summary(df):
     }
 
     return infos
-
-    # steps = get_steps_from_infos(df, infos)
-    # return steps
 
 
 def detect_high_correlation(df, threshold=0.85):
@@ -145,7 +139,3 @@ def detect_high_correlation(df, threshold=0.85):
     }
 
     return infos
-
-    # steps = get_steps_from_infos(df, infos)
-    #
-    # return steps

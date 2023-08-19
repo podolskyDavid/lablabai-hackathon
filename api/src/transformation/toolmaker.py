@@ -3,7 +3,7 @@ import json
 
 import openai
 
-from prompts import TOOL_MAKER_PROMPT, TOOL_WRAPPER_PROMPT
+from api.src.transformation.prompts import TOOL_MAKER_PROMPT, TOOL_WRAPPER_PROMPT
 
 
 def generate(prompt, max_tokens=256, temperature=0.0, model="gpt-3.5-turbo"):
@@ -35,7 +35,7 @@ def generate(prompt, max_tokens=256, temperature=0.0, model="gpt-3.5-turbo"):
             pass
 
 
-def tool_making(df, transformation, model="gpt-4", temperature=0.3):
+def make_tool(df, transformation, model="gpt-4", temperature=0.3):
     prompt1 = "\n\n".join([
                               f"DataFrame (df): {df}. For the given dataframe, write a function to apply this transformation:{transformation}.",
                               TOOL_MAKER_PROMPT])
