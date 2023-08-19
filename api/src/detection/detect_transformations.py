@@ -1,13 +1,24 @@
-from typing import Dict
+from typing import *
 
 import pandas as pd
 import io
 import openai
 import re
-from detection_modules import *
+from pandas import DataFrame
+
+from api.src.detection.prompts import DETECTOR_PROMPT
+
+Steps = List[Dict[str, Union[int, str]]]
+"""
+Represents a number of steps in a particular order which an OpenAI model thinks are the best transformations. Sample Steps:
+[
+{'step': 1, 'description': "Convert column 'date' to datetime format."}, 
+{'step': 2, 'description': "Remove leading/trailing whitespace from column 'country'."},
+]
+"""
 
 
-def parse_to_json(s):
+def parse_to_json(s) -> Steps:
     # Use regex to extract step numbers and descriptions
     matches = re.findall(r'(\d+)\.\s(.*?)(?=\d+\.|$)', s, re.DOTALL)
 
@@ -18,7 +29,7 @@ def parse_to_json(s):
     return steps
 
 
-def _call_chatgpt(df, infos: Dict = {}):
+def _call_chatgpt(df: DataFrame, infos: Dict = {}):
     """Calls the chatgpt API to detect transformations."""
     query = ""
     for key, value in infos.items():
@@ -29,7 +40,7 @@ def _call_chatgpt(df, infos: Dict = {}):
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system",
-             "content": "You are a bot who is responsible to detect issues in a pandas dataframe. You are given the head of the dataframe (a few rows of data) and a description of each column. Suggest possible transformation to clean the dataframe and make it ready for analysis. Be really concrete, name the operation and the column you want to apply it on. Also consider the column types etc. We want to have a perfectly tidy dataframe at the end. Restrict the transformation to the provided columns."
+             "content": DETECTOR_PROMPT
              },
             {"role": "user",
              "content": query}]
@@ -37,7 +48,7 @@ def _call_chatgpt(df, infos: Dict = {}):
     return chat_completion.choices[0].message.content
 
 
-def detect_transformations(df, infos: Dict = {}):
+def detect_transformations(df, infos: Dict = {}) -> Steps:
     transformation_str = _call_chatgpt(df, infos)
     steps = parse_to_json(transformation_str)
 

@@ -1,18 +1,34 @@
 import pandas as pd
 from sklearn.feature_selection import VarianceThreshold
 import io
-from detect_transformations import detect_transformations
+from api.src.detection.detect_transformations import detect_transformations, Steps
+
+class Detector:
+    """Detects and creates a list of instructions using the OpenAI API to transform a DataFrame."""
+    def get_steps_from_initial_df(self, df) -> Steps:
+        """ Detects and creates a list of instructions for an initial DataFrame """
+        # TODO experiment with this, possibly using another function from this file
+        steps = general_summary(df, n=10)
+        return steps
+
+    def get_steps_from_former_steps(self, df, task_id) -> Steps:
+        """ Detects and creates a list of instructions for a DataFrame based on information from steps it's already made """
+        # TODO experiment with this, possibly writing another function.
+        # TODO possibly use a Task object with the provided task_id to retrieve former steps and the DataFrame.
+        # TODO Prioritize experiments with this since it's directly responsible for improving the agent performance.
+        steps = general_summary(df, n=10)  # stub, only uses current state
+        return steps
 
 def general_summary(df, n=10):
     """
     Provides the first few rows of the DataFrame.
-    
+
     Parameters:
     - df: DataFrame
     - n: Number of rows to return
-    
+
     Returns:
-    - Instructions what transformations to do in general based on a view of the data. 
+    - Instructions what transformations to do in general based on a view of the data.
     """
     # TODO: use only this function as input to tool_making(), possibly experiment with adding some more stats to the prompt
     head = df.head(n)
@@ -20,36 +36,38 @@ def general_summary(df, n=10):
     df.info(buf=buf)
     s = buf.getvalue()
     numerical = df.describe()
-    
+
     infos = {
         "Description of the Numerical Columns": numerical.to_string(),
         "Head of the DataFrame": head.to_string(),
         "Column Infos": s
     }
-    
+
     steps = detect_transformations(df, infos)
-    
+
     return steps
+
 
 def datatype_summary(df):
     """
-    Provides the data types for each column. 
+    Provides the data types for each column.
 
     Parameters:
     - df: DataFrame
 
     Returns:
-    - Instructions what transformations to do base don the data types. 
+    - Instructions what transformations to do base don the data types.
     """
     overview = pd.DataFrame({
         'Data Type': df.dtypes,
         'Columns': df.columns,
     })
-    
+
     steps = detect_transformations(df, overview)
-    
+
     return steps
-    
+
+
 def unique_values_summary(df):
     """
     Provides the number of unique values in each column of the dataset.
@@ -58,20 +76,21 @@ def unique_values_summary(df):
     - df: DataFrame
 
     Returns:
-    - Instructions what transformations to do to handle the unique values or lack of them. 
+    - Instructions what transformations to do to handle the unique values or lack of them.
     """
     overview = pd.DataFrame({
         'Column': df.columns,
         'Unique Values': df.nunique(),
         'Percentage': df.nunique() / len(df) * 100
     })
-    
+
     infos = {
         "Unique Values": overview.to_string()
     }
-    
+
     steps = detect_transformations(df, infos)
     return steps
+
 
 def detect_high_correlation(df, threshold=0.85):
     """
@@ -86,19 +105,19 @@ def detect_high_correlation(df, threshold=0.85):
     """
     corr_matrix = df.corr()
     correlated_features = set()
-    
+
     for i in range(len(corr_matrix.columns)):
         for j in range(i):
             if abs(corr_matrix.iloc[i, j]) > threshold:
                 colname = corr_matrix.columns[i]
                 correlated_features.add(colname)
-                
+
     infos = {
         "Highly Correlated Features": correlated_features,
         "Head": df.head().to_string(),
         "Correlation Matrix": corr_matrix.to_string()
     }
-    
+
     steps = detect_transformations(df, infos)
-                
+
     return steps
