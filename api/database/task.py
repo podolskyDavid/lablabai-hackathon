@@ -1,4 +1,4 @@
-from __init__ import supabase, table, bucket
+from client import table, bucket
 from typing import *
 import os
 import re
@@ -7,13 +7,15 @@ from pandas import DataFrame
 
 class Task:
     task_id: int
+    task_name: str  # human-readable
     user_id: str  # just the email for now
     max_step_count: int
-    def __init__(self, user_id: str, task_id: int | None = None,
+    def __init__(self, user_id: str, task_id: int | None = None, task_name: str | None = None,
                  initial_df: DataFrame | None = None, initial_df_frontend: DataFrame | None = None):
         """ Create a new task for a new initial_df DataFrame or retrieve an existing task with task_id """
         self.user_id = user_id
         self.task_id = task_id
+        self.task_name = task_name
 
         if self.task_id is None:
             # create a new task
@@ -54,6 +56,7 @@ class Task:
         table.insert({
             'step_id': step_id,
             'task_id': self.task_id,
+            'task_name': self.task_name,
             'step_count': self.max_step_count,
             'user_id': self.user_id,
             'transformation': transformation,
@@ -65,11 +68,14 @@ class Task:
 
 if __name__ == '__main__':
     my_df = DataFrame({'a': [1, 2, 3]})
-    # task = Task(user_id='test@example.com', initial_df=my_df, initial_df_frontend=my_df)
-    task = Task(user_id='nico@example.com', task_id=1)
-    task.upload_new_step('lambda x: x', 'test transformation 1 - no change', my_df, my_df)
-    task.upload_new_step('lambda x: x', 'test transformation 2 - no change', my_df, my_df)
-    task.upload_new_step('lambda x: x', 'test transformation 3 - no change', my_df, my_df)
+    task = Task(user_id='alex@example.com', task_name="Alex's Task", initial_df=my_df, initial_df_frontend=my_df)
+    task.upload_new_step('lambda x: x', 'Alex transformation 1 - no change', my_df, my_df)
+
+    task = Task(user_id='nico@example.com', task_name="Nico's Task", initial_df=my_df, initial_df_frontend=my_df)
+    # task = Task(user_id='nico@example.com', task_name='some task')
+    task.upload_new_step('lambda x: x', 'Nico transformation 1 - no change', my_df, my_df)
+    task.upload_new_step('lambda x: x', 'Nico transformation 2 - no change', my_df, my_df)
+    task.upload_new_step('lambda x: x', 'Nico transformation 3 - no change', my_df, my_df)
     # print(task.task_id, task.user_id, task.max_step_count)
 
     # with open('test_csv/test.csv', 'rb') as f:
