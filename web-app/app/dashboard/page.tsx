@@ -17,7 +17,7 @@ const tags = Array.from({ length: 15 }).map(
     (_, i, a) => `v1.2.0-beta.${a.length - i}`
 )
 
-export function AgentStepsArea() {
+function AgentStepsArea() {
     return (
         <ScrollArea className="h-full w-full">
             <div className="p-4">
