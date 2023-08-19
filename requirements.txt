@@ -36,6 +36,7 @@ pydantic==2.2.1
 pydantic_core==2.6.1
 pytest==6.2.5
 python-dateutil==2.8.2
+python-multipart==0.0.6
 pytz==2023.3
 realtime==1.0.0
 realtime-py==0.1.3

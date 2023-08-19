@@ -2,7 +2,7 @@ from io import StringIO
 
 import requests
 
-from client import table, bucket
+from api.src.database.client import table, bucket
 from typing import *
 import os
 import re
@@ -32,12 +32,18 @@ class Task:
             if initial_df is None:
                 raise ValueError('initial_df must be provided when creating a new task, i.e. when task_id is None')
             if initial_df_frontend is None:
-                initial_df_frontend = initial_df
+                initial_df_frontend = self.df_to_frontend_df(initial_df)
             self.upload_new_step('', 'Initial DataFrame', initial_df, initial_df_frontend)
         else:
             # find max step id within an existing task
             step_counts: List = table.select('task_id, step_count').eq('task_id', self.task_id).execute().data
             self.max_step_count = max([int(c['step_count']) for c in step_counts])
+
+    def df_to_frontend_df(self, df: DataFrame, num_rows: int = 10) -> DataFrame:
+        """ Convert a DataFrame to a shorter DataFrame that can be displayed in the frontend """
+        # TODO add some extra info to the first and last row of frontend_df
+        frontend_df = df.head(num_rows)
+        return frontend_df
 
     def get_latest_df(self) -> DataFrame:
         """ Get the DataFrame corresponding to the latest step in the task """
