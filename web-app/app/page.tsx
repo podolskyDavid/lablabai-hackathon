@@ -8,7 +8,7 @@ interface Props {
   onSelectFile: (file: File | null) => void;
 }
 
-const Home: React.FC<Props> = ({ onSelectFile }) => {
+export default function Home() {
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     console.log("From onFileUploadChange");
   };
@@ -26,5 +26,3 @@ const Home: React.FC<Props> = ({ onSelectFile }) => {
     </div>
   );
 };
-
-export default Home;
