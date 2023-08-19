@@ -12,7 +12,6 @@ import {
 import {Button} from "@/components/ui/button"
 import {Textarea} from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 
 const tags = Array.from({ length: 15 }).map(
     (_, i, a) => `v1.2.0-beta.${a.length - i}`
@@ -22,7 +21,7 @@ export function AgentStepsArea() {
     return (
         <ScrollArea className="h-full w-full">
             <div className="p-4">
-                <h4 className="mb-4 text-sm font-medium leading-none">Agent's Actions History</h4>
+                <h4 className="mb-4 text-sm font-medium leading-none">Agent Actions History</h4>
                 {tags.map((tag) => (
                     <div className="flex items-center justify-between mb-2">
                         <Button variant="outline" className="w-full" key={tag}>{tag}</Button>
