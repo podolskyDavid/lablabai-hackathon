@@ -48,7 +48,7 @@ def _call_chatgpt(df: DataFrame, infos: Dict = {}):
     return chat_completion.choices[0].message.content
 
 
-def detect_transformations(df, infos: Dict = {}) -> Steps:
+def get_steps_from_infos(df, infos: Dict = {}) -> Steps:
     transformation_str = _call_chatgpt(df, infos)
     steps = parse_to_json(transformation_str)
 
