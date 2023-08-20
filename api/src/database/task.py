@@ -14,7 +14,7 @@ class Task:
     task_id: int
     task_name: str  # human-readable
     user_id: str  # just the email for now
-    max_step_count: int
+
     def __init__(self, user_id: str, task_id: int | None = None, task_name: str | None = None,
                  initial_df: DataFrame | None = None, initial_df_frontend: DataFrame | None = None):
         """ Create a new task for a new initial_df DataFrame or retrieve an existing task with task_id """
@@ -27,17 +27,20 @@ class Task:
             task_ids: List = table.select('task_id').execute().data
             max_id = max([id['task_id'] for id in task_ids]) if not task_ids == [] else 0
             self.task_id = max_id + 1
-            self.max_step_count = 0
 
             if initial_df is None:
                 raise ValueError('initial_df must be provided when creating a new task, i.e. when task_id is None')
             if initial_df_frontend is None:
                 initial_df_frontend = self.df_to_frontend_df(initial_df)
-            self.upload_new_step('', 'Initial DataFrame', initial_df, initial_df_frontend)
-        else:
-            # find max step id within an existing task
-            step_counts: List = table.select('task_id, step_count').eq('task_id', self.task_id).execute().data
-            self.max_step_count = max([int(c['step_count']) for c in step_counts])
+            # Upload first step
+            self.upload_step(step_id=str(self.task_id)+'_0', step_count=0, transformation='', explanation='Initial DataFrame', df_after=initial_df, df_frontend=initial_df_frontend)
+
+    def max_step_count(self) -> int:
+        step_counts: List = table.select('task_id, step_count').eq('task_id', self.task_id).execute().data
+        if len(step_counts) <= 1:  # start max_step_count at 0 if there are no steps yet
+            return 0
+        max_step_count = max([int(c['step_count']) for c in step_counts])
+        return max_step_count
 
     def df_to_frontend_df(self, df: DataFrame, num_rows: int = 10) -> DataFrame:
         """ Convert a DataFrame to a shorter DataFrame that can be displayed in the frontend """
@@ -53,7 +56,8 @@ class Task:
 
     def get_latest_df(self) -> DataFrame:
         """ Get the DataFrame corresponding to the latest step in the task """
-        url = table.select('df_after').eq('task_id', self.task_id).eq('step_count', self.max_step_count).execute().data[0]['df_after']
+        url = table.select('df_after').eq('task_id', self.task_id).eq('step_count', self.max_step_count())\
+            .execute().data[0]['df_after']
         return self._get_df_at_url(url)
 
     def get_history(self) -> List[Dict]:
@@ -63,16 +67,14 @@ class Task:
         {'step_count': 5, 'transformation': 'def f(): ...', 'explanation': 'Robert transformation with a change', 'df_after': DataFrame}
         ]
         """
-        history: List[Dict] = table.select('step_count, transformation, explanation, df_after').eq('task_id', self.task_id).execute().data
+        history: List[Dict] = table.select('step_count, transformation, explanation, df_after').eq('task_id',
+                                                                                                   self.task_id).execute().data
         for step in history:
             step['df_after'] = self._get_df_at_url(step['df_after'])
         return history
 
-    def upload_new_step(self, transformation: str, explanation: str, df_after: DataFrame, df_frontend: DataFrame):
-        """ Upload a new step in the task to the DB """
-        self.max_step_count += 1
-        step_id = str(self.task_id) + '_' + str(self.max_step_count)
-
+    def upload_step(self, step_id: str, step_count: int, transformation: str, explanation: str, df_after: DataFrame, df_frontend: DataFrame):
+        """ Upload a step in the task to the DB """
         # convert dataframes to csv
         os.makedirs('temp', exist_ok=True)
         df_after.to_csv('temp/df.csv', index=False)
@@ -91,13 +93,19 @@ class Task:
             'step_id': step_id,
             'task_id': self.task_id,
             'task_name': self.task_name,
-            'step_count': self.max_step_count,
+            'step_count': step_count,
             'user_id': self.user_id,
             'transformation': transformation,
             'explanation': explanation,
             'df_after': df_after_url,
             'df_frontend': df_frontend_url
         }).execute()
+
+    def upload_new_step(self, transformation: str, explanation: str, df_after: DataFrame, df_frontend: DataFrame):
+        """ Upload a new step in the task to the DB """
+        step_count = self.max_step_count() + 1
+        step_id = str(self.task_id) + '_' + str(step_count)
+        self.upload_step(step_id, step_count, transformation, explanation, df_after, df_frontend)
 
 
 if __name__ == '__main__':
@@ -107,12 +115,22 @@ if __name__ == '__main__':
     # task.upload_new_step('lambda x: x', 'Alex transformation 1 - no change', my_df, my_df)
 
     # Create a new task for Robert
-    # task = Task(user_id='robert@example.com', task_name="Robert's Task", initial_df=my_df)
-    # task.upload_new_step('lambda x: x', 'Robert transformation 1 - no change', my_df, my_df)
-    # task.upload_new_step('lambda x: x', 'Robert transformation 2 - no change', my_df, my_df)
-    # task.upload_new_step('lambda x: x', 'Robert transformation 3 - no change', my_df, my_df)
-    # task.upload_new_step('def f(): ...', 'Robert transformation with a change', DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), my_df)
+    task = Task(user_id='robert@example.com', task_name="Robert's Task", initial_df=my_df)
+    print(task.max_step_count())
+    task.upload_new_step('lambda x: x', 'Robert transformation 1 - no change', my_df, my_df)
+    print(task.max_step_count())
+    task.upload_new_step('lambda x: x', 'Robert transformation 2 - no change', my_df, my_df)
+    print(task.max_step_count())
+    task.upload_new_step('lambda x: x', 'Robert transformation 3 - no change', my_df, my_df)
+    print(task.max_step_count())
+    task.upload_new_step('def f(): ...', 'Robert transformation with a change', DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), my_df)
+    print(task.max_step_count())
+
     # Retrieve Robert's task with task_id 12
-    task = Task(user_id='robert@example.com', task_id=12)
-    h = task.get_history()
-    print(h)
+    # task = Task(user_id='robert@example.com', task_id=12)
+    # h = task.get_history()
+    # print(h)
+
+    # task = Task(user_id='robert@example.com', task_id=34)
+    # m = task.max_step_count()
+    # print(m)

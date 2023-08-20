@@ -22,20 +22,21 @@ class Detector:
 
     def get_steps_from_initial_df(self, df) -> Steps:
         """ Detects and creates a list of instructions for an initial DataFrame """
-        infos = self.get_initial_summary(df)
-        steps = get_steps_from_summary(infos)
+        summary = self.get_initial_summary(df)
+        steps = get_steps_from_summary(summary)
         return steps
 
-    def get_summary_from_former_steps(self, df) -> Dict[str, str]:
+    def get_summary_from_former_steps(self) -> Dict[str, str]:
         # TODO experiment with this, possibly writing another function.
         # TODO possibly use a Task object with the provided task_id to retrieve former steps and the DataFrame.
-        # TODO Prioritize experiments with this since it's directly responsible for improving the agent performance.
+        # TODO Prioritize experiments with this since it's directly responsible for improving the agent performance over multiple Steps.
+        df = self.task.get_latest_df()  # only considers the latest df, i.e. latest state
         return general_summary(df)
 
-    def get_steps_from_former_steps(self, df) -> Steps:
-        """ Detects and creates a list of instructions for a DataFrame based on information from steps it's already made """
-        infos = self.get_summary_from_former_steps(df)
-        steps = get_steps_from_summary(infos)
+    def get_steps_from_former_steps(self) -> Steps:
+        """ Detects and creates a list of instructions for a DataFrame based on information from steps it's already taken """
+        summary = self.get_summary_from_former_steps()  # only considers the latest df, i.e. latest state
+        steps = get_steps_from_summary(summary)
         return steps
 
 
@@ -57,13 +58,13 @@ def general_summary(df, n=10):
     s = buf.getvalue()
     numerical = df.describe()
 
-    infos = {
+    summary = {
         "Description of the Numerical Columns": numerical.to_string(),
         "Head of the DataFrame": head.to_string(),
         "Column Infos": s
     }
 
-    return infos
+    return summary
 
 
 # def datatype_summary(df):
@@ -104,11 +105,11 @@ def unique_values_summary(df):
         'Percentage': df.nunique() / len(df) * 100
     })
 
-    infos = {
+    summary = {
         "Unique Values": overview.to_string()
     }
 
-    return infos
+    return summary
 
 
 def detect_high_correlation(df, threshold=0.85):
@@ -132,10 +133,10 @@ def detect_high_correlation(df, threshold=0.85):
                 colname = corr_matrix.columns[i]
                 correlated_features.add(colname)
 
-    infos = {
+    summary = {
         "Highly Correlated Features": correlated_features,
         "Head": df.head().to_string(),
         "Correlation Matrix": corr_matrix.to_string()
     }
 
-    return infos
+    return summary

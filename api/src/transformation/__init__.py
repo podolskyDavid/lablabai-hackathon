@@ -11,7 +11,7 @@ from api.src.transformation.prompts import *
 import inspect
 
 
-def get_signatures_and_full_docstrings(module):
+def get_signatures_and_full_docstrings(module) -> str:
     """Around 11k characters in total for the transformations module"""
     s = ""
 
@@ -24,8 +24,8 @@ def get_signatures_and_full_docstrings(module):
 
     return s
 
-def get_signatures_and_short_descriptions(module):
-    """Around 11k characters in total for the transformations module"""
+
+def get_signatures_and_short_descriptions(module) -> str:
     s = ""
 
     for name, func in inspect.getmembers(module):
@@ -37,7 +37,33 @@ def get_signatures_and_short_descriptions(module):
 
     return s
 
-def get_function_code_and_docstring(function_name):
+
+def get_signatures(module) -> str:
+    s = ""
+
+    for name, func in inspect.getmembers(module):
+        if inspect.isfunction(func) and inspect.getmodule(func) == module:
+            sig = inspect.signature(func)
+            s += f'{name}\n\n'
+
+    return s
+
+
+def get_import_statements(module) -> str:
+    source_lines = inspect.getsourcelines(module)[0]
+    import_statements = []
+
+    for line in source_lines:
+        if re.match(r'^\s*import|from', line):
+            import_statements.append(line.rstrip())
+
+        if re.search(r'\b(def|class)\b', line):
+            break
+
+    return '\n'.join(import_statements)
+
+
+def get_function_code_and_docstring(function_name) -> str:
     try:
         function = getattr(transformations, function_name)
         if not isinstance(function, FunctionType):
@@ -47,11 +73,13 @@ def get_function_code_and_docstring(function_name):
     except AttributeError:
         raise AttributeError(f"'{function_name}' is not a function in the 'transformations' module")
 
+
 def summary_to_str(summary: Dict[str, str]) -> str:
     s = ""
     for key, value in summary.items():
         s += f"{key}:\n {value}\n\n"
     return s
+
 
 class TransformationOrchestrator:
     def __init__(self, task: Task):
@@ -72,7 +100,8 @@ class TransformationOrchestrator:
             messages=[
                 {"role": "system",
                  "content": SELECT_TRANSFORMATION_PROMPT +
-                            get_signatures_and_short_descriptions(transformations)
+                            # get_signatures_and_short_descriptions(transformations)
+                            get_signatures(transformations)
                  },
                 {"role": "user",
                  "content": f"Select exactly one function to apply to the dataframe to achieve the following preprocessing step:"
@@ -82,7 +111,8 @@ class TransformationOrchestrator:
                  },
             ]
         )
-        return chat_completion.choices[0].message.content.split('(')[0]  # only return the function name, not the signature
+        return chat_completion.choices[0].message.content.split('(')[
+            0]  # only return the function name, not the signature
 
     def generate_code(self, step: str, summary: Dict[str, str]) -> str:
         """
@@ -92,21 +122,22 @@ class TransformationOrchestrator:
         transformation = self._select_transformation(step, summary)
         if transformation == "None":
             # TODO create a function from scratch with toolmaker
-            print('... Creating a function from with toolmaker because no function was selected ...')
-            function_definition = 'Your function definition here'
+            print('... Creating a function with toolmaker because no function was selected ...')
+            function_definition = '# Your function definition here'
         else:
             try:
                 function_definition: str = get_function_code_and_docstring(transformation)
             except AttributeError:
                 # TODO create a function from scratch with toolmaker
-                print('... Creating a function from scratch with toolmaker '
-                      'because a function was selected but it does not exist in transformations.py ...')
+                print(f'... Creating a function from scratch with toolmaker '
+                      f'because the function {transformation} was selected but it does not exist in transformations.py ...')
                 print('!!! Consider changing the SELECT_TRANSFORMATION_PROMPT !!!')
-                function_definition = 'Your function definition here'
+                function_definition = '# Your function definition here'
 
-        prompt: str = GENERATE_CODE_PROMPT\
-            .replace('{function_definition}', function_definition)\
-            .replace('{step}', step)\
+        # Generate a function call and append it to the function definition
+        prompt: str = GENERATE_FUNCTION_CALL_PROMPT \
+            .replace('{function_definition}', function_definition) \
+            .replace('{step}', step) \
             .replace('{summary_string}', summary_to_str(summary))
 
         chat_completion = openai.ChatCompletion.create(
@@ -117,15 +148,46 @@ class TransformationOrchestrator:
                  },
             ]
         )
-        response = chat_completion.choices[0].message.content
+        function_call = chat_completion.choices[0].message.content
         # TODO add some code correctness check like in toolmaker - maybe use some kind of linter?
-        if '```python' in response:
-            response = response.split('```python')[1].split('```')[0]
-        return '# Apply this transformation: ' +\
-            function_definition +\
-            '\n# Call the function above\n' +\
-            response
+        if '```python' in function_call:
+            function_call = function_call.split('```python')[1].split('```')[0]
+        else:
+            print('!!! No function call was generated !!!')
+            print('Generated:')
+            print(function_call)
+            print('!!! Consider changing the GENERATE_FUNCTION_CALL_PROMPT !!!')
+            function_call = '# No function call code was generated'
+
+        # Generate import statements and prepend them to the function definition
+        prompt: str = GENERATE_IMPORTS_PROMPT \
+            .replace('{snippet}', function_definition + '\n' + function_call) \
+            .replace('{imports}', get_import_statements(transformations))
+        chat_completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user",
+                 "content": prompt
+                 },
+            ]
+        )
+        imports = chat_completion.choices[0].message.content
+        # TODO add some code correctness check like in toolmaker - maybe use some kind of linter?
+        if '```python' in imports:
+            imports = imports.split('```python')[1].split('```')[0]
+        else:
+            print('!!! No import statements were generated !!!')
+            print('Generated:')
+            print(imports)
+            print('!!! Consider changing the GENERATE_FUNCTION_CALL_PROMPT !!!')
+            imports = '# No imports code was generated'
+
+        return imports + \
+            '\n# Transformation to be applied:\n' + \
+            function_definition + \
+            '\n# Call the function above\n' + \
+            function_call
 
 
 if __name__ == '__main__':
-    print(get_function_code_and_docstring('drop_duplicates'))
+    print(get_signatures(transformations)[:500])
