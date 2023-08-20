@@ -45,12 +45,28 @@ class Task:
         frontend_df = df.head(num_rows)
         return frontend_df
 
-    def get_latest_df(self) -> DataFrame:
-        """ Get the DataFrame corresponding to the latest step in the task """
-        url = table.select('df_after').eq('task_id', self.task_id).eq('step_count', self.max_step_count).execute().data[0]['df_after']
+    def _get_df_at_url(self, url: str) -> DataFrame:
+        """ Get the DataFrame at a given url """
         csv_string = requests.get(url).text
         df: DataFrame = pd.read_csv(StringIO(csv_string))
         return df
+
+    def get_latest_df(self) -> DataFrame:
+        """ Get the DataFrame corresponding to the latest step in the task """
+        url = table.select('df_after').eq('task_id', self.task_id).eq('step_count', self.max_step_count).execute().data[0]['df_after']
+        return self._get_df_at_url(url)
+
+    def get_history(self) -> List[Dict]:
+        """
+        Get the history of transformations for this task. Sample output:
+        [
+        {'step_count': 5, 'transformation': 'def f(): ...', 'explanation': 'Robert transformation with a change', 'df_after': DataFrame}
+        ]
+        """
+        history: List[Dict] = table.select('step_count, transformation, explanation, df_after').eq('task_id', self.task_id).execute().data
+        for step in history:
+            step['df_after'] = self._get_df_at_url(step['df_after'])
+        return history
 
     def upload_new_step(self, transformation: str, explanation: str, df_after: DataFrame, df_frontend: DataFrame):
         """ Upload a new step in the task to the DB """
@@ -90,12 +106,13 @@ if __name__ == '__main__':
     # task = Task(user_id='alex@example.com', task_name="Alex's Task", initial_df=my_df, initial_df_frontend=my_df)
     # task.upload_new_step('lambda x: x', 'Alex transformation 1 - no change', my_df, my_df)
 
-    # Create a new task for Nico
-    # task = Task(user_id='nico@example.com', task_name="Nico's Task", initial_df=my_df, initial_df_frontend=my_df)
-    # Retrieve Nico's task with task_id 2
-    task = Task(user_id='nico@example.com', task_id=2)
-    # task.upload_new_step('lambda x: x', 'Nico transformation with a change', DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), my_df)
-    # task.upload_new_step('lambda x: x', 'Nico transformation 2 - no change', my_df, my_df)
-    # task.upload_new_step('lambda x: x', 'Nico transformation 3 - no change', my_df, my_df)
-    df = task.get_latest_df()
-    print(df)
+    # Create a new task for Robert
+    # task = Task(user_id='robert@example.com', task_name="Robert's Task", initial_df=my_df)
+    # task.upload_new_step('lambda x: x', 'Robert transformation 1 - no change', my_df, my_df)
+    # task.upload_new_step('lambda x: x', 'Robert transformation 2 - no change', my_df, my_df)
+    # task.upload_new_step('lambda x: x', 'Robert transformation 3 - no change', my_df, my_df)
+    # task.upload_new_step('def f(): ...', 'Robert transformation with a change', DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), my_df)
+    # Retrieve Robert's task with task_id 12
+    task = Task(user_id='robert@example.com', task_id=12)
+    h = task.get_history()
+    print(h)
