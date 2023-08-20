@@ -58,10 +58,14 @@ class Task:
         df: DataFrame = pd.read_csv(StringIO(csv_string))
         return df
 
+    def get_latest_data(self) -> Dict:
+        data_dict = table.select('*').eq('task_id', self.task_id).eq('step_count', self.max_step_count()) \
+            .execute().data[0]
+        return data_dict
+
     def get_latest_df(self) -> DataFrame:
         """ Get the DataFrame corresponding to the latest step in the task """
-        url = table.select('df_after').eq('task_id', self.task_id).eq('step_count', self.max_step_count())\
-            .execute().data[0]['df_after']
+        url = self.get_latest_data()['df_after']
         return self._get_df_at_url(url)
 
     def get_history(self) -> List[Dict]:
