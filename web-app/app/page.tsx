@@ -3,7 +3,7 @@ import axios from 'axios';
 import Form from './form';
 
 export default async function Home() {
-  async function handleSubmit(childData) {
+  async function handleSubmit(childData: { email: any; file: any; description: any; }) {
     const {email, file, description} = childData
     if(file) {
       const formData = new FormData();
