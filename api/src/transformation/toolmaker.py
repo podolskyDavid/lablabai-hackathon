@@ -7,6 +7,7 @@ from api.src.transformation.prompts import TOOL_MAKER_PROMPT, TOOL_WRAPPER_PROMP
 
 
 def generate(prompt, max_tokens=256, temperature=0.0, model="gpt-3.5-turbo"):
+    """UNUSED"""
     if model in ["gpt-3.5-turbo", "gpt-4"]:
         params = {
             "model": model,
@@ -35,9 +36,12 @@ def generate(prompt, max_tokens=256, temperature=0.0, model="gpt-3.5-turbo"):
             pass
 
 
-def make_tool(df, transformation, model="gpt-4", temperature=0.3):
+def make_tool(step: str, summary: str, model="gpt-4", temperature=0.3):
+    """ A tool is a function created from scratch by an OpenAI model. """
+    # TODO Experiment with the prompting in this function
     prompt1 = "\n\n".join([
-                              f"DataFrame (df): {df}. For the given dataframe, write a function to apply this transformation:{transformation}.",
+                              f"Information about the DataFrame (df):\n {summary}",
+                              f"For the given dataframe, write a function to apply the following transformation:\n {step}",
                               TOOL_MAKER_PROMPT])
     message = [{"role": "user", "content": prompt1}]
 
@@ -60,11 +64,13 @@ def make_tool(df, transformation, model="gpt-4", temperature=0.3):
             message.append({"role": "user",
                             "content": f"Failed to execute the function due to the error: {type(e).__name__} {e}. Please fix it and try again."})
 
-    print("Tool:", message[-1]["content"])
+    print("Generated a function from scratch:\n\n", message[-1]["content"])
 
     message.append({"role": "assistant", "content": response})
 
-    prompt2 = f"DataFrame (df): {df}.\n\nFor the above code and the given dataframe, write unit tests to verify the correctness transformation."
+    prompt2 = f"Information about the DataFrame (df):\n {summary}.\n\n" \
+              f"Desired transformation:\n {step}\n\n" \
+              f"For the above code and the given dataframe, write unit tests to verify the correctness of the function."
     message.append({"role": "user", "content": prompt2})
 
     params = {
@@ -87,22 +93,23 @@ def make_tool(df, transformation, model="gpt-4", temperature=0.3):
             print("ERROR: failed to verify", e)
             message.append({"role": "user",
                             "content": f"Failed to verify the function due to the error: {type(e).__name__} {e}. Please fix it and try again."})
-
     print("Verification:", message[-1]["content"])
 
-    if success:
-        message.append({"role": "user", "content": TOOL_WRAPPER_PROMPT})
-        params = {
-            "model": model,
-            "max_tokens": 2048,
-            "temperature": temperature,
-            "messages": message
-        }
-        try:
-            response = openai.ChatCompletion.create(**params)["choices"][0]["message"]["content"]
-            message.append({"role": "assistant", "content": response})
-            print("Wrapper:", response)
-        except Exception as e:
-            print("ERROR: failed to generate wrapper", e)
+    return tool, success
 
-    return tool, verification, success, message
+    # if success:
+    #     message.append({"role": "user", "content": TOOL_WRAPPER_PROMPT})
+    #     params = {
+    #         "model": model,
+    #         "max_tokens": 2048,
+    #         "temperature": temperature,
+    #         "messages": message
+    #     }
+    #     try:
+    #         response = openai.ChatCompletion.create(**params)["choices"][0]["message"]["content"]
+    #         message.append({"role": "assistant", "content": response})
+    #         print("Wrapper:", response)
+    #     except Exception as e:
+    #         print("ERROR: failed to generate wrapper", e)
+    #
+    # return tool, verification, success, message

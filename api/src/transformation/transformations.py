@@ -10,7 +10,6 @@ from fuzzywuzzy import process
 from sklearn.linear_model import LinearRegression
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, WordNetLemmatizer
-from nltk.stem import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from gensim.models import Word2Vec
 from sklearn.decomposition import PCA
@@ -19,7 +18,6 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from statsmodels.tsa.seasonal import seasonal_decompose
 from nltk.corpus import stopwords
 import nltk
-nltk.download('stopwords') 
 
 def fill_missing_values(df, col, value="Unknown"):
     """
@@ -33,10 +31,10 @@ def fill_missing_values(df, col, value="Unknown"):
     Returns:
         DataFrame: DataFrame with handled missing values.
     """
-    
+
     # Fill missing values
     df = df.fillna({col: "Unknown"})
-    
+
     return df
 
 def delete_missing(df, column):
@@ -88,11 +86,11 @@ def predict_missing(df, column, features):
     """
     train = df.dropna()
     test = df[df[column].isna()]
-    
+
     model = LinearRegression()
     model.fit(train[features], train[column])
     predictions = model.predict(test[features])
-    
+
     df.loc[df[column].isna(), column] = predictions
     return df
 
@@ -326,7 +324,7 @@ def drop_duplicates(df, subset=None, keep='first'):
 def set_dtype(df, col, dtype):
     """
     Set the datatype for a column.
-    
+
     Parameters:
         df (DataFrame): Input DataFrame.
         col (str): Name of the column.
@@ -336,7 +334,7 @@ def set_dtype(df, col, dtype):
         DataFrame: DataFrame with the column set to the desired datatype.
     """
     df[col] = df[col].astype(dtype)
-    
+
     return df
 
 def handle_text_data(df, col, pattern, replacement):
@@ -353,7 +351,7 @@ def handle_text_data(df, col, pattern, replacement):
         DataFrame: DataFrame with replaced text.
     """
     df[col] = df[col].str.replace(pattern, replacement)
-    
+
     return df
 
 def handle_datetime(df, col, format=None, errors='raise', infer_datetime_format=False):
@@ -371,7 +369,7 @@ def handle_datetime(df, col, format=None, errors='raise', infer_datetime_format=
         DataFrame: DataFrame with datetime formatted column.
     """
     df[col] = pd.to_datetime(df[col], format=format, errors=errors, infer_datetime_format=infer_datetime_format)
-    
+
     return df
 
 def collapse_categories(df, col, mapping):
@@ -387,7 +385,7 @@ def collapse_categories(df, col, mapping):
         DataFrame: DataFrame with collapsed categories.
     """
     df[col] = df[col].replace(mapping)
-    
+
     return df
 
 def find_similar_strings(df, col, string, threshold=80):
@@ -407,7 +405,7 @@ def find_similar_strings(df, col, string, threshold=80):
     for match in matches:
         if match[1] >= threshold:
             df.loc[df[col] == match[0], col] = string
-            
+
     return df
 
 def truncate_outliers(df, column, lower_percentile=1, upper_percentile=99):
@@ -545,6 +543,7 @@ def remove_stopwords(df, column):
     Returns:
     - DataFrame with text with stopwords removed
     """
+    nltk.download('stopwords')
     stop = stopwords.words('english')
     df[column] = df[column].apply(lambda x: ' '.join([word for word in str(x).split() if word not in stop]))
     return df
@@ -599,7 +598,7 @@ def time_since(df, column, event_date, time_unit="days"):
     """
     event_datetime = pd.to_datetime(event_date)
     delta = (df[column] - event_datetime)
-    
+
     if time_unit == "days":
         df[f"time_since_{event_date}"] = delta.dt.days
     elif time_unit == "seconds":
@@ -623,7 +622,7 @@ def decompose_seasonality(df, column, model='additive', freq=None, plot=True):
     - Decomposition result object
     """
     result = seasonal_decompose(df[column], model=model, freq=freq)
-    
+
     return result
 
 def anonymize_email(email):
