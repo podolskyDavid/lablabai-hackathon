@@ -40,8 +40,8 @@ export default function Form() {
         'accept': 'application/json',
       },
     })
-    const route = "./dashboard?email=${email}";
-    router.push("./dashboard?email=${email}")
+    const route = "./dashboard?email=" + email;
+    router.push(route)
   }
 
   return (

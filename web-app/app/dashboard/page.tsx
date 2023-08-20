@@ -31,6 +31,9 @@ async function getTasksByUser(email: string) {
 
 
 export default function Dashboard() {
+    const params = useSearchParams()
+    let email = params.get("email")
+    if(!email) email = ""
     const init = [{ step_id: "1_1", created_at: "2023-08-19T13:22:09.06096+00:00", user_id: "alex@example.com", transformation: "start", df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv" }];
     const [data, setData] = useState(init);
     const arr: unknown[] = [["a"],["1"],["2"],["3"],["4"]]
@@ -50,7 +53,7 @@ export default function Dashboard() {
     function AgentStepsArea() {
         useEffect(() => {
             setTimeout(async () =>  {
-                let input = await getTasksByUser("coder@example.com");
+                let input = await getTasksByUser(email);
                 if(input) {
                     setData(input)
                 }
