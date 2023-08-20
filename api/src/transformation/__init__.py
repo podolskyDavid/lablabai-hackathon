@@ -6,7 +6,7 @@ import openai
 from pandas import DataFrame
 
 from api.src.database import Task
-from api.src.transformation import transformations
+from api.src.transformation import transformations, toolmaker
 from api.src.transformation.prompts import *
 import inspect
 
@@ -93,7 +93,7 @@ class TransformationOrchestrator:
         :return: the name of the function to use or "None" to create a new function with toolmaker
         """
 
-        # TODO: Experiment with prompts; consider calling get_signatures_and_full_docstrings() instead
+        # TODO: Experiment with prompts; consider calling get_signatures_and_short_descriptions() instead of get_signatures()
         # TODO: Check if the function exists in the transformations module and try to regenerate if it doesn't. See toolmaker for an example
         chat_completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-16k",
@@ -111,8 +111,19 @@ class TransformationOrchestrator:
                  },
             ]
         )
-        return chat_completion.choices[0].message.content.split('(')[
-            0]  # only return the function name, not the signature
+        # only return the function name, not the signature
+        return chat_completion.choices[0].message.content.split('(')[0]
+
+    def _generate_transformation(self, step: str, summary: Dict[str, str]) -> str:
+        """
+        Generates a transformation function from scratch using toolmaker.make_tool
+        """
+        tool, success = toolmaker.make_tool(step, summary_to_str(summary))
+        if success:
+            return tool
+        else:
+            # last resort: nudge the model to write a function
+            return "# Your function definition goes here"
 
     def generate_code(self, step: str, summary: Dict[str, str]) -> str:
         """
@@ -121,18 +132,20 @@ class TransformationOrchestrator:
         """
         transformation = self._select_transformation(step, summary)
         if transformation == "None":
-            # TODO create a function from scratch with toolmaker
             print('... Creating a function with toolmaker because no function was selected ...')
-            function_definition = '# Your function definition here'
+            function_definition = self._generate_transformation(step, summary)
         else:
             try:
+                # Get full function code including docstring from transformations.py
+                # The model will then generate import statements and a call to this function
                 function_definition: str = get_function_code_and_docstring(transformation)
             except AttributeError:
                 # TODO create a function from scratch with toolmaker
                 print(f'... Creating a function from scratch with toolmaker '
-                      f'because the function {transformation} was selected but it does not exist in transformations.py ...')
+                      f'because the function {transformation} was selected '
+                      f'but it does not exist in transformations.py (likely hallucinated) ...')
                 print('!!! Consider changing the SELECT_TRANSFORMATION_PROMPT !!!')
-                function_definition = '# Your function definition here'
+                function_definition = self._generate_transformation(step, summary)
 
         # Generate a function call and append it to the function definition
         prompt: str = GENERATE_FUNCTION_CALL_PROMPT \
