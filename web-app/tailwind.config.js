@@ -70,6 +70,14 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      backgroundImage: theme => ({
+        'gradient-border': 'linear-gradient(90deg, #FB923C 0%, #DA4099 50%, #8B5CF6 100%)',
+      }),
+    },
+  },
+  variants: {
+    extend: {
+      backgroundImage: ['hover'],
     },
   },
   plugins: [require("tailwindcss-animate")],
