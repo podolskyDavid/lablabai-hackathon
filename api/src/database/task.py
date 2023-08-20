@@ -41,6 +41,10 @@ class Task:
             return 0
         max_step_count = max([int(c['step_count']) for c in step_counts])
         return max_step_count
+    
+    def retrieve_previous_steps(self) -> List[Dict]:
+        """ Retrieve the previous steps for this task """
+        return table.select('explanation').eq('task_id', self.task_id).execute().data
 
     def df_to_frontend_df(self, df: DataFrame, num_rows: int = 10) -> DataFrame:
         """ Convert a DataFrame to a shorter DataFrame that can be displayed in the frontend """

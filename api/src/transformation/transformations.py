@@ -319,7 +319,7 @@ def drop_duplicates(df, subset=None, keep='first'):
     Returns:
         DataFrame: DataFrame with duplicates dropped.
     """
-    return df.drop_duplicates(subset, keep)
+    return df.drop_duplicates(subset=subset, keep=keep)
 
 def set_dtype(df, col, dtype):
     """

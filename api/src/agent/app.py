@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI, UploadFile, HTTPException, File
 import pandas as pd
 import io
-from api.src.database import new_task
+from src.database import new_task
 
 app = FastAPI()
 task = None
