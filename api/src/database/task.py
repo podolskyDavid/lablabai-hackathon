@@ -50,7 +50,7 @@ class Task:
         # frontend_df = df.head(num_rows)
         # return frontend_df
         frontend_df = insert_info_row(df)
-        return frontend_df
+        return frontend_df.head(num_rows + 1)
 
     def _get_df_at_url(self, url: str) -> DataFrame:
         """ Get the DataFrame at a given url """
