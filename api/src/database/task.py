@@ -9,6 +9,8 @@ import re
 from pandas import DataFrame
 import pandas as pd
 
+from api.src.database.util import insert_info_row
+
 
 class Task:
     task_id: int
@@ -44,8 +46,10 @@ class Task:
 
     def df_to_frontend_df(self, df: DataFrame, num_rows: int = 10) -> DataFrame:
         """ Convert a DataFrame to a shorter DataFrame that can be displayed in the frontend """
-        # TODO add some extra info to the first and last row of frontend_df
-        frontend_df = df.head(num_rows)
+        # Old naive implementation:
+        # frontend_df = df.head(num_rows)
+        # return frontend_df
+        frontend_df = insert_info_row(df)
         return frontend_df
 
     def _get_df_at_url(self, url: str) -> DataFrame:
@@ -115,16 +119,20 @@ if __name__ == '__main__':
     # task.upload_new_step('lambda x: x', 'Alex transformation 1 - no change', my_df, my_df)
 
     # Create a new task for Robert
-    task = Task(user_id='robert@example.com', task_name="Robert's Task", initial_df=my_df)
-    print(task.max_step_count())
-    task.upload_new_step('lambda x: x', 'Robert transformation 1 - no change', my_df, my_df)
-    print(task.max_step_count())
-    task.upload_new_step('lambda x: x', 'Robert transformation 2 - no change', my_df, my_df)
-    print(task.max_step_count())
-    task.upload_new_step('lambda x: x', 'Robert transformation 3 - no change', my_df, my_df)
-    print(task.max_step_count())
-    task.upload_new_step('def f(): ...', 'Robert transformation with a change', DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), my_df)
-    print(task.max_step_count())
+    task1 = Task(user_id='robert@example.com', task_name="Robert's Task", initial_df=my_df)
+    task2 = Task(user_id='robert@example.com', task_id=task1.task_id)
+    task3 = Task(user_id='robert@example.com', task_id=task1.task_id)
+    print(task1.max_step_count(), ' ', task2.max_step_count())
+    task1.upload_new_step('lambda x: x', 'Robert transformation 1 - no change', my_df, my_df)
+    print(task1.max_step_count(), ' ', task2.max_step_count())
+    task2.upload_new_step('lambda x: x', 'Robert transformation 2 - no change', my_df, my_df)
+    print(task1.max_step_count(), ' ', task2.max_step_count())
+    task3.upload_new_step('lambda x: x', 'Robert transformation 3 - no change', my_df, my_df)
+    task3.upload_new_step('lambda x: x', 'Robert transformation 4 - no change', my_df, my_df)
+    task3.upload_new_step('lambda x: x', 'Robert transformation 5 - no change', my_df, my_df)
+    print(task1.max_step_count(), ' ', task2.max_step_count())
+    task1.upload_new_step('def f(): ...', 'Robert transformation with a change', DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), my_df)
+    print(task1.max_step_count(), ' ', task2.max_step_count())
 
     # Retrieve Robert's task with task_id 12
     # task = Task(user_id='robert@example.com', task_id=12)
