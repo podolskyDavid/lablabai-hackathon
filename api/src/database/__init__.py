@@ -1,4 +1,4 @@
-from api.src.database.task import Task
+from src.database.task import Task
 from pandas import DataFrame
 
 

@@ -2,7 +2,7 @@ from io import StringIO
 
 import requests
 
-from api.src.database.client import table, bucket
+from src.database.client import table, bucket
 from typing import *
 import os
 import re
