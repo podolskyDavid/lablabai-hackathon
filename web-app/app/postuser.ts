@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+export default function handler(req: any, res: any) {
     // Get data submitted in request's body.
     const body = req.body
     // Optional logging to see the responses
