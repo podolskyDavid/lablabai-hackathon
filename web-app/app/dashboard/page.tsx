@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react';
 import {useRouter, useSearchParams, useParams } from 'next/navigation'
 
@@ -14,19 +16,44 @@ import {Button} from "@/components/ui/button"
 import {Textarea} from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { createClient } from '@supabase/supabase-js'
-
-const tags = Array.from({ length: 15 }).map(
-    (_, i, a) => `v1.2.0-beta.${a.length - i}`
-)
+import { useState, useEffect } from "react";
 
 function AgentStepsArea() {
+    const init = [{ step_id: "1_1", created_at: "2023-08-19T13:22:09.06096+00:00", user_id: "alex@example.com", transformation: "start" }];
+    const [data, setData] = useState(init);
+    useEffect(() => {
+        setTimeout(async () =>  {
+            let input = await getTasksByUser("alex@example.com");
+            if(input) {
+                input = input.slice(0, 10);
+                setData(input)
+            }
+        }, 1000)
+    })
+
+    const [expandedStep, setExpandedStep] = useState("");
+
+    const handleButtonClick = (step_id:any) => {
+        if (!(expandedStep === step_id)) {
+            setExpandedStep(step_id);
+        }
+        console.log(expandedStep);
+      };
+
     return (
         <ScrollArea className="h-full w-full">
             <div className="p-4">
                 <h4 className="mb-4 text-sm font-medium leading-none">Agent Actions History</h4>
-                {tags.map((tag) => (
-                    <div className="flex items-center justify-between mb-2" key={tag}>
-                        <Button variant="outline" className="w-full">{tag}</Button>
+                {data.map((tag) => (
+                    <div key={tag.step_id}>
+                        <div className="flex items-center justify-between mb-2" key={tag.step_id}>
+                            <Button variant="outline" className="w-full" onDoubleClick={() => handleButtonClick(tag.step_id)}>{tag.step_id}</Button>
+                        </div>
+                        {expandedStep === tag.step_id && (
+                            <div>
+                            <p>{tag.transformation}</p>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
@@ -42,16 +69,13 @@ async function getTasksByUser(email: string) {
     .from('db_steps')
     .select()
     .eq('user_id', email)
-    console.log("data")
-    console.log(email)
-    console.log(data)
     return data;
 }
 
 
-export default async function Dashboard() {
-    const invoices = getTasksByUser("alex@example.com")
-    const resolvedData: any[] | null = await invoices;
+export default function Dashboard() {
+    const init = [["Header 1", "Header 2", "Header 3", "Header 4"]];
+
     return (
         <div className="flex flex-col lg:flex-row h-screen">
             <div className="lg:w-7/12 bg-transparent p-4 border border-white rounded-sm m-4">
@@ -66,16 +90,14 @@ export default async function Dashboard() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {resolvedData !== null &&
-                            resolvedData.map((invoice) => (
-                                <TableRow key={invoice.invoice}>
-                                    <TableCell className="font-medium">{invoice.invoice}</TableCell>
-                                    <TableCell>{invoice.paymentStatus}</TableCell>
-                                    <TableCell>{invoice.paymentMethod}</TableCell>
-                                    <TableCell className="text-right">{invoice.totalAmount}</TableCell>
+                        {/* {data &&
+                            data.map((rowData) => (
+                                <TableRow key={1}>
+                                  {rowData && rowData.map((cellData, cellIndex) => (
+                                    <TableCell key={cellIndex}>{cellData}</TableCell>
+                                  ))}
                                 </TableRow>
-                            ))
-                        }
+                              ))} */}
                     </TableBody>
                 </Table>
             </div>
