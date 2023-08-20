@@ -76,7 +76,6 @@ class Agent:
                 new_code = "\n\n".join(re.findall(r"```python\n(.*?)```", response, re.DOTALL))
                 return new_code
             except Exception as e:
-                print(f"Error in regenerating code: {str(e)}")
                 print("Retrying...")
                 continue
         return None
@@ -86,13 +85,12 @@ class Agent:
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
     def run_single_step(self, step: str, summary: str, columns: list[str]):
         if self.error_message:
-            print("!!regenerating code wait.!!")
             self.code = self.regenerate_to_fix(self.code, self.error_message, step)
         else:
             print("...generating the code...")
             self.code = self.tro.generate_code(step, summary, columns)
             
-        print(self.code)
+        print(self.code[:50])
         print('=' * 70 + '  EXECUTING CODE   ' + '=' * 70)
         self.execute(self.code, step)
         self.code = ''
@@ -127,11 +125,20 @@ class Agent:
             print('=' * 70 + '  CREATING STEPS   ' + '=' * 70)
             curr_step = get_first_step(self.detector.get_steps_from_former_steps())
             curr_summary, past_steps = self.detector.get_summary_from_former_steps()
+    
+    def custom_message_execution(self, message: str):
+        self.current_step_message = message
+        self.error_message = ''
+        self.code = ''
+        self.run_single_step(message, self.detector.get_initial_summary(self.task.get_latest_df()), self.task.get_latest_df().columns)
+
 
 
 if __name__ == '__main__':
     # initial_df = pd.read_csv('test_csv/BL-Flickr-Images-Book.csv')
     initial_df = pd.read_csv('../test_csv/Financials.csv')
     task = new_task(user_id='robert5@coder.com', task_name='coding', initial_df=initial_df)
-    agent = Agent(initial_df, task)
+    # agent = Agent(initial_df, task)
+    agent = Agent(initial_df, task, task_name='coding')
+    agent.custom_message_execution("Convert column 'date' to datetime format.")
 

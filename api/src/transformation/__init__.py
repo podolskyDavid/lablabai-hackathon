@@ -124,7 +124,6 @@ class TransformationOrchestrator:
         """
         transformation = self._select_transformation(step, summary, columns)
         if transformation == "None":
-            print('... Creating a function with toolmaker because no function was selected ...')
             function_definition = self._generate_transformation(step, summary)
         else:
             try:

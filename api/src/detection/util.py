@@ -20,7 +20,6 @@ def parse_to_json(s) -> Steps:
     matches = re.findall(r'Step (\d+): (.*?)(?=Step \d+:|$)', s, re.DOTALL)
     steps = [{"step": int(match[0]), "description": match[1].strip()} for match in matches]
     if not steps:
-        print("Steps not found:", s)
         raise ValueError("Steps not found")
     return steps
 

@@ -46,15 +46,13 @@ class Detector:
         if past_steps:
             # insert as first
             messages.insert(0, {"role": "system", "content": "ALREADY completed past steps and summarize them: "+', '.join([f'{step["explanation"]}' for step in past_steps])})
+
         print("Doing openai DF summary")
         response = openai.ChatCompletion.create(
                 model='gpt-4',
                 messages=messages,
                 max_tokens=500,
                 ).choices[0].message.content
-        
-        print("Summary\n", response)
-        print("=====================================")
         self.openai_summary = response
 
     def get_initial_summary(self, df) -> str:
@@ -76,10 +74,8 @@ class Detector:
     def get_summary_from_former_steps(self) -> str:
         df = self.task.get_latest_df()  # only considers the latest df, i.e. latest state
         past_steps = self.task.retrieve_previous_steps()
-        print("Past step: ", past_steps)
         summary_dict = general_summary(df, n=5)
         self.get_openai_summary(summary_dict, past_steps=past_steps)
-        print("Updated Summary\n", self.openai_summary)
         return self.openai_summary, past_steps
 
 
