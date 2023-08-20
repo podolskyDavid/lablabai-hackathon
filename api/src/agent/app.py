@@ -3,6 +3,8 @@ import uvicorn
 from fastapi import FastAPI, UploadFile, HTTPException, File
 import pandas as pd
 import io
+
+from api.src.agent.agent import Agent
 from api.src.database import new_task
 
 app = FastAPI()
@@ -29,7 +31,7 @@ def upload_file(user_id: str, task_name: str | None = None, file: UploadFile = F
         task = new_task(user_id, task_name, df)
         task_id = task.task_id
 
-        # TODO trigger agent run
-        return {'task_id': task_id}
+        agent = Agent(df, task)
+        return {'task_id': agent.task.task_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process file: {str(e)}")
