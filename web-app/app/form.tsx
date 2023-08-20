@@ -1,10 +1,8 @@
 'use client'
 
-import React, { useState, ChangeEvent } from 'react';
-import { Button } from "@/components/ui/button"
+import React, { useState} from 'react';
 import { Textarea } from "@/components/ui/textarea"
 import {Input} from "@/components/ui/input"
-import axios from 'axios';
 import { useRouter } from "next/navigation";
 
 

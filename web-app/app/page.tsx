@@ -1,13 +1,8 @@
-import React, { useState, ChangeEvent } from 'react';
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import {Input} from "@/components/ui/input"
+import React from 'react';
 import axios from 'axios';
 import Form from './form';
 
 export default async function Home() {
-
-
   async function handleSubmit(childData) {
     const {email, file, description} = childData
     if(file) {

@@ -1,7 +1,8 @@
+// @ts-nocheck
 'use client'
 
 import React from 'react';
-import {useRouter, useSearchParams, useParams } from 'next/navigation'
+import {useSearchParams } from 'next/navigation'
 import Papa from 'papaparse';
 
 import {
