@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import React from 'react';
@@ -8,7 +7,9 @@ import Papa from 'papaparse';
 import Image from "next/image";
 import Link from "next/link";
 
-import { Loader2 } from "lucide-react"
+import {Loader2} from "lucide-react"
+import {ListStart} from 'lucide-react';
+
 
 import {
     Table,
@@ -33,8 +34,8 @@ import {Textarea} from "@/components/ui/textarea"
 import {ScrollArea} from "@/components/ui/scroll-area"
 import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
+import {ToastAction} from "@/components/ui/toast"
+import {useToast} from "@/components/ui/use-toast"
 
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
@@ -50,7 +51,7 @@ const CodeBlock = ({language, value}) => {
     }, []);
 
     return (
-        <pre className="border-white rounded-md">
+        <pre className="border-white rounded-md overflow-x-scroll">
       <code ref={codeEl} className={language}>
         {value}
       </code>
@@ -82,6 +83,7 @@ export default function Dashboard() {
             transformation: "start",
             explanation: "This is the first step",
             df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
+            df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
             code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
             latest: false,
         },
@@ -92,6 +94,7 @@ export default function Dashboard() {
             transformation: "Second State",
             explanation: "This is the second step",
             df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
+            df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
             code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
             latest: false,
         },
@@ -102,6 +105,7 @@ export default function Dashboard() {
             transformation: "Third State",
             explanation: "This is the third step",
             df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
+            df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
             code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
             latest: false,
         },
@@ -112,6 +116,7 @@ export default function Dashboard() {
             transformation: "Third State",
             explanation: "This is the third step",
             df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
+            df_after_url: "",
             code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
             latest: true,
         },
@@ -122,6 +127,13 @@ export default function Dashboard() {
     const [frame, setFrame] = useState(arr)
     const [headers, setHeaders] = useState(arr)
     const [curr, setCurr] = useState("");
+
+    const queue = 0;
+    const [queueData, setQueueData] = useState(queue);
+    const handleQueueDataButtonClick = () => {
+        setQueueData(prevQueueData => prevQueueData + 1);
+    };
+
     const handleButtonClick = async (step_id: any) => {
         setCurr(step_id);
         const fr = await downloadAndParseCSV(data.find(obj => obj.step_id === step_id)?.df_frontend)
@@ -132,7 +144,7 @@ export default function Dashboard() {
         }
     };
 
-    const { toast } = useToast()
+    const {toast} = useToast()
 
     function AgentStepsArea() {
         // useEffect(() => {
@@ -148,26 +160,27 @@ export default function Dashboard() {
         return (
             <ScrollArea className="h-full w-full">
                 <div className="p-4">
-                    <h4 className="mb-4 text-sm font-medium leading-none">Agent Actions History</h4>
+                    <h4 className="mb-4 text-sm font-medium leading-none">Agents Actions History</h4>
                     {data.map((tag) => (
                         <div key={tag.step_id}>
                             <div className="flex items-center justify-between space-x-2 mb-2" key={tag.step_id + 1000}>
                                 {tag.latest ? (
-                                    <Button disabled className="w-2/3">
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        {tag.step_id}
+                                    <Button disabled className="w-2/3 bg-green-400">
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                        Step {tag.step_id} is running...
                                     </Button>
                                 ) : (
                                     <Button variant="outline" className="w-2/3"
                                             onClick={() => handleButtonClick(tag.step_id)}>
-                                        {tag.step_id}
+                                        Step {tag.step_id}
                                     </Button>
                                 )}
+
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <Button variant="secondary" className="w-1/3">More Information</Button>
+                                        <Button variant="secondary" className="w-1/3">More Info</Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[1000px]">
+                                    <DialogContent className="sm:max-w-[700px] overflow-auto max-h-screen">
                                         <DialogHeader>
                                             <DialogTitle>{tag.step_id}</DialogTitle>
                                             <DialogDescription>
@@ -175,6 +188,7 @@ export default function Dashboard() {
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="grid gap-4 py-4">
+                                            <div className="font-semibold">Executed code:</div>
                                             <CodeBlock
                                                 language="python"
                                                 value={`
@@ -196,20 +210,22 @@ if __name__ == "__main__":
 `}
                                             />
                                         </div>
-                                        <DialogFooter>
-                                            <Button onClick={() => {
-                                                navigator.clipboard.writeText(tag.code)
-                                            }
+                                        <DialogFooter className="">
+                                            <div className="flex flex-row align justify-end space-x-2">
+                                                <Button onClick={() => {
+                                                    navigator.clipboard.writeText(tag.code)
+                                                }
 
-                                            }>
+                                                }>
                                                     Copy Code
-                                            </Button>
-                                            <Button asChild type="submit">
-                                                <a href={tag.df_frontend} target="_blank" rel="noopener noreferrer"
-                                                   download>
-                                                    Download the Full Data Frame
-                                                </a>
-                                            </Button>
+                                                </Button>
+                                                <Button asChild type="submit">
+                                                    <a href={tag.df_after_url} target="_blank" rel="noopener noreferrer"
+                                                       download>
+                                                        Download the Full Data Frame
+                                                    </a>
+                                                </Button>
+                                            </div>
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
@@ -220,6 +236,23 @@ if __name__ == "__main__":
                             )}
                         </div>
                     ))}
+                    <div className="space-y-2 mt-10">
+                        {
+                            Array.from({length: queueData}, (_, index) => (
+                                <Button
+                                    disabled
+                                    key={index}
+                                    variant="outline"
+                                    className="w-full bg-yellow-500 text-black"
+                                    onClick={() => handleButtonClick(index + 1)}
+                                >
+                                    <ListStart className="mr-2 h-4 w-4"/>
+                                    Backlog {index + 1}
+                                </Button>
+                            ))
+                        }
+                    </div>
+
                 </div>
             </ScrollArea>
         )
@@ -278,16 +311,19 @@ if __name__ == "__main__":
                     </ScrollArea>
                 </div>
                 <div className="lg:w-5/12 flex flex-col">
-                    <div className="bg-transparent h-1/2 p-4 border border-white rounded-sm m-4 lg:ml-0 lg:mb-2">
-
+                    <div
+                        className="bg-transparent h-1/2 p-4 border border-white rounded-sm sm:mt-0 lg:mt-4 m-4 lg:ml-0 lg:mb-2">
                         <AgentStepsArea/>
-
                     </div>
-                    <div className="bg-transparent h-1/2 p-4 border border-white rounded-sm m-4 lg:ml-0 lg:mt-2">
+                    <div
+                        className="bg-transparent h-1/2 p-4 border border-white rounded-sm sm:mt-0 m-4 lg:ml-0 lg:mt-2">
                         <ScrollArea className="h-full w-full p-4">
                             <div className="flex flex-col w-full gap-2">
-                                <Textarea placeholder="Type your message here." className="flex-grow"/>
-                                <Button>Send message</Button>
+                                <h4 className="mb-1 text-sm font-medium leading-none">Provide further instructions to
+                                    the agents.</h4>
+                                <h4 className="mb-4 text-sm font-medium leading-none text-red-600">Bidirectional communication with agents is still under development.</h4>
+                                <Textarea placeholder="Type your message here." className="flex-grow mb-2"/>
+                                <Button onClick={handleQueueDataButtonClick}>Send message</Button>
                             </div>
                         </ScrollArea>
                     </div>

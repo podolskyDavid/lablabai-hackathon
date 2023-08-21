@@ -70,7 +70,6 @@ export default function Form() {
                         <PopoverContent className="w-80">
                             <div className="grid gap-4">
                                 <div className="space-y-2">
-                                    <h4 className="font-medium leading-none">Login</h4>
                                     <p className="text-sm text-muted-foreground">
                                         Type in your email to login
                                     </p>
@@ -81,11 +80,17 @@ export default function Form() {
                                         <Input
                                             id="width"
                                             type="email"
-                                            defaultValue="guest@tidyai.tech"
+                                            placeholder="guest@tidyai.tech"
                                             className="col-span-2 h-8"
+                                            onChange={(e) => setEmail(e.target.value)}
                                         />
                                     </div>
                                 </div>
+                                <Button asChild className="">
+                                    <Link href={"./dashboard?email=" + email}>
+                                        Login
+                                    </Link>
+                                </Button>
                             </div>
                         </PopoverContent>
                     </Popover>
@@ -93,16 +98,16 @@ export default function Form() {
             </div>
             <div className="flex flex-row pt-2 pb-2 m-4 mb-0 space-x-4">
                 <div className="flex flex-col justify-center w-1/2 space-y-12 border-white border rounded-lg p-4">
-                    <div className="">
+                    <div className="space-y-2">
                         <h1 className="text-2xl">Enter your email:</h1>
                         <Input className="w-full" type="email" placeholder="Email"
                                onChange={(e) => setEmail(e.target.value)}/>
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
                         <h1 className="text-2xl">Insert a data file to clean:</h1>
                         <input
-                            className="block w-1/2 text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
                             onChange={handleFileChange} aria-describedby="file_input_help" id="file_input" type="file"
                             accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"/>
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-300" id="file_input_help">.csv, .xsl,
@@ -110,7 +115,7 @@ export default function Form() {
                     </div>
 
                 </div>
-                <div className="w-1/2  border-white border rounded-lg p-4">
+                <div className="w-1/2  border-white border rounded-lg p-4 space-y-2">
                     <p className="text-2xl">Describe the data columns briefly:</p>
                     <Textarea className="w-full mb-4" placeholder="Type your message here."
                               onChange={(e) => setDescription(e.target.value)}/>
