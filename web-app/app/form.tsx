@@ -21,6 +21,7 @@ export default function Form() {
     const [email, setEmail] = useState('');
     const [file, setFile] = useState(null);
     const [description, setDescription] = useState('');
+    const [taskId, setTaskId] = useState("")
 
     const handleFileChange = (event: any) => {
         if (event.target.files && event.target.files.length > 0) {
@@ -28,29 +29,34 @@ export default function Form() {
         }
     };
     const router = useRouter();
-    const submit = (e: any) => {
+    const submit = async (e: any) => {
 
         const formURL = e.target.action
         const data = new FormData()
-
-        // Turn our formData state into data we can use with a form submission
-        if (file) {
-            const formData = [email, file, description]
-            Object.entries(formData).forEach(([key, value]) => {
-                data.append(key, value);
-            })
-        }
+        data.append('file', file);
+        data.append('user_id', email);
 
         // POST the data to the URL of the form
-        fetch(formURL, {
+        const res = await fetch(`https://agent-dnrxaaj6sq-lm.a.run.app/upload?user_id=${email}`, {
             method: "POST",
             body: data,
             headers: {
                 'accept': 'application/json',
             },
         })
-        const route = "./dashboard?email=" + email;
-        router.push(route)
+        console.log(res)
+        if(!res.ok) {
+            throw new Error('Failed to fetch data')
+        }
+        const response = await res.json()
+        const tid = response.task_id;
+        console.log(tid)
+        setTaskId(tid)
+        const route = "./dashboard?email=" + email + "&taskid=" + tid;
+        function func() {
+            router.push(route)
+        }
+        func()
     }
 
     return (

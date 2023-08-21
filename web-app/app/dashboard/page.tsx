@@ -76,6 +76,8 @@ async function getTasksByUser(email: string) {
 export default function Dashboard() {
     const params = useSearchParams()
     let email = params.get("email")
+    let tid = params.get("taskid")
+    console.log(tid)
     if (!email) email = "guest@tidyai.tech"
     const init = [
         {
