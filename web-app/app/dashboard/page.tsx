@@ -49,7 +49,7 @@ const CodeBlock: FC<{ language: string, value: string }> = ({language, value}) =
 
     useEffect(() => {
         if (codeEl && codeEl.current) {
-            hljs.highlightBlock(codeEl.current);
+            hljs.highlightElement(codeEl.current);
         }
     }, []);
 
@@ -63,22 +63,37 @@ const CodeBlock: FC<{ language: string, value: string }> = ({language, value}) =
 }
 
 async function getTasksByUser(email: string) {
-    const supabase =
-        createClient('https://eiruqjgfkgoknuhihfha.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpcnVxamdma2dva251aGloZmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTI0MzQxNTcsImV4cCI6MjAwODAxMDE1N30.HKZHbuiB2r8NN367J0LkD2UgwhaqJS2f0Ux9ezCFETA')
-    const {data, error} = await supabase
-        .from('db_steps')
-        .select()
-        .eq('user_id', email)
-    return data;
+    try {
+        const supabase =
+            createClient('https://eiruqjgfkgoknuhihfha.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpcnVxamdma2dva251aGloZmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTI0MzQxNTcsImV4cCI6MjAwODAxMDE1N30.HKZHbuiB2r8NN367J0LkD2UgwhaqJS2f0Ux9ezCFETA')
+        const {data, error} = await supabase
+            .from('db_steps')
+            .select('*')
+            .eq('user_id', email)
+            .order('created_at', {ascending: false})
+        if (data) {
+            for (let i = 0; i < data.length; i++) {
+                if (i === 0 && data.length !== 7) {
+                    data[i].latest = true
+                } else {
+                    data[i].latest = false
+                }
+            }
+        }
+        
+        return data;
+    } catch (error) {
+        console.error(error);
+        // If an error occurs, return an empty array or null
+        return [];
+    }
 }
 
 export default function Dashboard() {
     const params = useSearchParams()
     let email = params.get("email")
-    console.log(email)
     let tid = params.get("taskid")
-    console.log(tid)
     if (!email) email = "guest@tidyai.tech"
     const init: any[] | (() => any[]) = [];
     const [data, setData] = useState(init);
@@ -89,7 +104,6 @@ export default function Dashboard() {
     const [df, setDf] = useState<any[] | null>(null);
     const [headers, setHeaders] = useState(h)
     const [curr, setCurr] = useState("");
-    const [cnt, setCnt] = useState(0);
 
     const queue = 0;
     const [queueData, setQueueData] = useState(queue);
@@ -98,25 +112,40 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        // const eventSource = new EventSource(`http://0.0.0.0:80/stream?task_id=${tid}`);
-        const eventSource = new EventSource(`https://agent-dnrxaaj6sq-lm.a.run.app/stream?task_id=${tid}`);
-        // const eventSource = new EventSource(`https://agent-dnrxaaj6sq-lm.a.run.app/stream?task_id=${tid}`);
-        eventSource.addEventListener("open", (e) => {
-            console.log("open")
-        })
-        eventSource.addEventListener(`Code executed (new_step_count)`, async (e) => {
-            let d = [...data]
-            let json_parsed = JSON.parse(e.data)
-            console.log(json_parsed)
+        let timeoutId: NodeJS.Timeout;
+        try {
+            if (!tid) return;
+            // const eventSource = new EventSource(`http://0.0.0.0:80/stream?task_id=${tid}`);
+            const eventSource = new EventSource(`https://agent-dnrxaaj6sq-lm.a.run.app/stream?task_id=${tid}`);
+            // const eventSource = new EventSource(`https://agent-dnrxaaj6sq-lm.a.run.app/stream?task_id=${tid}`);
+            eventSource.addEventListener("open", (e) => {
+                console.log("open")
+                // Clear the timeout if connection is successful
+                clearTimeout(timeoutId);
+            })
+            eventSource.addEventListener(`Code executed (new_step_count)`, async (e) => {
+                let d = [...data]
+                let json_parsed = JSON.parse(e.data)
 
-            let df = await downloadAndParseCSV(json_parsed.df_frontend_url);
-            setDf(df);
-        })
-        eventSource.addEventListener(`Explanation and code generated (new_code_and_explanation)`, async (e) => {
-            // let d = [...data]
-            // let json_parsed = JSON.parse(e.data)
-        })
-    });
+                let df = await downloadAndParseCSV(json_parsed.df_frontend_url);
+                setDf(df);
+            })
+
+            // Set a timeout to close the connection if it takes too long
+            timeoutId = setTimeout(() => {
+                eventSource.close();
+                console.error('Connection timed out');
+            }, 5000); // 5 seconds timeout
+
+            return () => {
+                eventSource.close();
+                clearTimeout(timeoutId);
+            };
+        } catch (error) {
+            console.error(error);
+            // not found anything
+        }
+    }, [tid]);
 
     const handleButtonClick = async (step_id: any) => {
         setCurr(step_id);
@@ -128,19 +157,17 @@ export default function Dashboard() {
         }
     };
 
-    const {toast} = useToast()
+    // const {toast} = useToast()
 
     function AgentStepsArea() {
         useEffect(() => {
             setTimeout(async () =>  {
-                let input = await getTasksByUser(email || "default@email.com");
-                console.log(input)
-                if(input) {
-                    setData(input)
+                let input = await getTasksByUser(email || "robert.lukoshko@gmail.com");
+                if (JSON.stringify(input) !== JSON.stringify(data)) {
+                    setData(input || [])
                 }
-            }, 50000)
-        })
-
+            }, 1000)
+        }, [])
 
         return (
             <ScrollArea className="h-full w-full">
@@ -152,12 +179,12 @@ export default function Dashboard() {
                                 {tag.latest ? (
                                     <Button disabled className="w-2/3 bg-green-400">
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                                        Step {tag.explanation} is running...
+                                        Completed: {tag.explanation.slice(0, 15)}... || 🧠Thinking...
                                     </Button>
                                 ) : (
                                     <Button variant="outline" className="w-2/3"
                                             onClick={() => handleButtonClick(tag.step_id)}>
-                                        Step {tag.explanation}
+                                        {tag.explanation.split(' ').slice(0, 4).join(' ')}...
                                     </Button>
                                 )}
 
@@ -169,20 +196,20 @@ export default function Dashboard() {
                                         <DialogHeader>
                                             <DialogTitle>{tag.explanation}</DialogTitle>
                                             <DialogDescription>
-                                                {tag.explanation}
+                                                {tag.explanation.split(' ').slice(0, 3).join(' ')}...
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="grid gap-4 py-4">
                                             <div className="font-semibold">Executed code:</div>
                                             <CodeBlock
                                                 language="python"
-                                                value={tag.code}
+                                                value={tag.transformation}
                                             />
                                         </div>
                                         <DialogFooter className="">
                                             <div className="flex flex-row align justify-end space-x-2">
                                                 <Button onClick={() => {
-                                                    navigator.clipboard.writeText(tag.code)
+                                                    navigator.clipboard.writeText(tag.transformation)
                                                 }
 
                                                 }>
@@ -233,7 +260,6 @@ export default function Dashboard() {
             const csvData = await response.text();
             const parsed = Papa.parse(csvData, {header: true, dynamicTyping: true,})
             console.log(parsed.data[0]);
-            console.log(parsed.meta.delimiter);
             let result = parsed.data.slice(0, 7);
             return result
         } catch (error) {

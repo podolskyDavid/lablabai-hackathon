@@ -39,6 +39,7 @@ export default function Form() {
 
         // POST the data to the URL of the form
         const res = await fetch(`https://agent-dnrxaaj6sq-lm.a.run.app/upload?user_id=${email}`, {
+        // const res = await fetch(`http://0.0.0.0:80/upload?user_id=${email}`, {
             method: "POST",
             body: data,
             headers: {
