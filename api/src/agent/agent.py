@@ -17,7 +17,7 @@ import dotenv
 
 
 EXECUTOR_ENDPOINT = 'https://executor-dnrxaaj6sq-lm.a.run.app/execute'
-MAX_NUM_STEPS = 8
+MAX_NUM_STEPS = os.getenv("MAX_NUM_STEPS", 3)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
@@ -46,7 +46,7 @@ class Agent:
     def execute(self, code: str, explanation: str):
         for line in code.splitlines():
             if "df = pd.read_csv(" in line:
-                code = code.replace("df = pd.read_csv('df.csv')", "")
+                code = code.replace(line, "")
         response = requests.post(EXECUTOR_ENDPOINT, params={
             'code': code, 'explanation': explanation, 'task_name': self.task_name,
             'task_id': self.task.task_id, 'user_id': self.task.user_id
@@ -55,7 +55,7 @@ class Agent:
         if response.status_code != 200:
             print("regenerating code wait...")
             # take last two line
-            self.error_message += "\n\n Error logs: " + '\n'.join(str(response.content.decode('utf-8')).splitlines()[-4:])
+            self.error_message += "\n\n Error logs: " + '\n'.join(str(response.content.decode('utf-8')).splitlines()[-3:])
             raise Exception("Error in executing code")
     
 
@@ -130,20 +130,27 @@ class Agent:
 
             print(self.task.get_latest_df().head())
     
-    # def custom_message_execution(self, message: str):
-    #     self.current_step_message = message
-    #     self.error_message = ''
-    #     self.code = ''
-    #     self.run_single_step(message, self.detector.get_initial_summary(self.task.get_latest_df()), self.task.get_latest_df().columns)
+    def custom_message_execution(self, message: str):
+        self.detector = Detector(self.task)
+        self.tro = TransformationOrchestrator(self.task)
+        self.curr_step = message
+        self.curr_summary = self.detector.get_initial_summary(self.task.get_latest_df())
+        self.step_count = self.task.max_step_count()
+        self.temp_code = ''
+        self.error_message = ''
+        self.code = ''
+        self.run_single_step()
+        
+        # self.run_single_step(message, self.detector.get_initial_summary(self.task.get_latest_df()), self.task.get_latest_df().columns)
 
 
 
 if __name__ == '__main__':
-    # initial_df = pd.read_csv('test_csv/BL-Flickr-Images-Book.csv')
-    initial_df = pd.read_csv('../test_csv/Financials.csv')
+    initial_df = pd.read_csv('/Users/robertlukoshko/Downloads/archive (1)/marketing_campaign.csv')
+    # initial_df = pd.read_csv('../test_csv/Financials.csv')
     task = new_task(user_id='robert6@coder.com', task_name='coding', initial_df=initial_df)
     # agent = Agent(initial_df, task)
     agent = Agent(initial_df, task, task_name='coding')
-    # agent.custom_message_execution("Convert column 'date' to datetime format.")
-    agent.run()
+    # agent.custom_message_execution("Add a new columsn with random numbers.")
+    # agent.run()
 

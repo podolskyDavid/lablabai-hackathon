@@ -6,21 +6,33 @@ import uvicorn
 from fastapi import FastAPI, UploadFile, HTTPException, File, BackgroundTasks
 import pandas as pd
 import io
+import json
 
 from sse_starlette import EventSourceResponse
 from starlette.requests import Request
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from src.agent import Agent
 from src.database import new_task
 
 # STATE_CHECK_DELAY = 0.1  # seconds
-STREAM_DELAY = 3  # seconds
+STREAM_DELAY = 1  # seconds
 RETRY_TIMEOUT = 15_000  # miliseconds
 
 
 app = FastAPI()
 app.state_storage = {}
-
+# origins = [
+#     "http://localhost:3000"
+# ]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root(task_id: int):
@@ -39,6 +51,20 @@ def test():
         'step_count': -1,
     }
 
+@app.get("/ask_custom_message")
+def ask_custom_message(task_id: int, message: str):
+    """
+    Receive a message from the frontend. Execute it and return the updated dataframe.
+    :returns: dataframe
+    """
+    try:
+        print('INIT CUSTOM MESSAGE')
+        a: Agent = app.state_storage[task_id]['agent']
+        a.custom_message_execution(message)
+        update_storage(a, task_id)
+        return {'df_after_url': app.state_storage[task_id]['df_after_url']}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to process message: {str(e)}")
 
 @app.post("/upload")
 def upload_file(user_id: str, task_name: str | None = None, file: UploadFile = File(...),
@@ -60,10 +86,10 @@ def upload_file(user_id: str, task_name: str | None = None, file: UploadFile = F
         print(f"READY TO UPDATE STATE STORAGE {task_id}")
         app.state_storage[task_id] = {
             'agent': agent,
-            'df_after_url': None,
-            'df_frontend_url': None,
-            'code': None,
-            'explanation': None,
+            'df_after_url': '',
+            'df_frontend_url': '',
+            'code': '',
+            'explanation': '',
             'step_count': -1,
         }
         print(f"UPDATED STATE STORAGE WITH {task_id}")
@@ -138,7 +164,7 @@ async def event_generator(request, task_id):
 
             # Don't yield dataframe URLs here: they still correspond to the previous step
             # because the code hasn't been executed yet
-            yield {
+            yield dict(data=json.dumps({
                 "event": 'Explanation and code generated (new_code_and_explanation)',
                 "id": task_id,
                 "retry": RETRY_TIMEOUT,
@@ -147,6 +173,7 @@ async def event_generator(request, task_id):
                     if key != 'agent' and key != 'df_after_url' and key != 'df_frontend_url'
                 }
             }
+        ))
 
         # If code was executed
         if new_step_count(task_id):
@@ -156,7 +183,8 @@ async def event_generator(request, task_id):
             # print('NEW STEP COUNT after update : ', a.step_count, app.state_storage[task_id]['step_count'])
 
             # Yield everything besides the agent object
-            yield {
+            yield dict(data=json.dumps(
+            {
                 "event": 'Code executed (new_step_count)',
                 "id": task_id,
                 "retry": RETRY_TIMEOUT,
@@ -165,6 +193,7 @@ async def event_generator(request, task_id):
                     if key != 'agent'
                 },
             }
+        ))
 
         await asyncio.sleep(STREAM_DELAY)
 

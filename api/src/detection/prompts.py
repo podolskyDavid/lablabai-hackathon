@@ -6,7 +6,6 @@ Here are some single operation you might do:
 -Convert relevant columns to datetime format
 -Identify and fill missing values
 -Identify and eliminate duplicates
--feature generation (TOP PRIORITY)
 -Normalize or standardize numerical columns
 -Encode categorical variables
 -Perform data binning or discretization
