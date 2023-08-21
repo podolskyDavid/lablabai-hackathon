@@ -33,6 +33,7 @@ export default function Form() {
 
         const formURL = e.target.action
         const data = new FormData()
+        // @ts-ignore
         data.append('file', file);
         data.append('user_id', email);
 

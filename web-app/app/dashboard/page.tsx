@@ -44,7 +44,7 @@ import 'highlight.js/styles/github-dark.css';
 import {createClient} from '@supabase/supabase-js'
 import {useState, useEffect, useRef} from "react";
 
-const CodeBlock: FC<{ language: string, value: string }> = ({ language, value }) => {
+const CodeBlock: FC<{ language: string, value: string }> = ({language, value}) => {
     const codeEl = useRef<HTMLElement | null>(null);
 
     useEffect(() => {
@@ -79,7 +79,7 @@ export default function Dashboard() {
     let tid = params.get("taskid")
     console.log(tid)
     if (!email) email = "guest@tidyai.tech"
-    const init = [
+    const init: any[] | (() => any[]) = [
         // {
         //     step_id: "1_1",
         //     explanation: "This is the first step",
@@ -136,13 +136,14 @@ export default function Dashboard() {
         eventSource.addEventListener(`Code executed (new_step_count)`, (e) => {
             let d = [...data]
             for (let obj of d) {
-                obj.latest=false
+                obj.latest = false
             }
-            d.push({df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv', 
-            df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv', 
-            code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",  
-            step_id: `${d.length + 1}`, latest: true,
-            explanation: "Fill missing values on column John using forward fill method'\n'",
+            d.push({
+                df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv',
+                df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv',
+                code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",
+                step_id: `${d.length + 1}`, latest: true,
+                explanation: "Fill missing values on column John using forward fill method'\n'",
             })
             setData(d)
             console.log(d)
@@ -154,19 +155,20 @@ export default function Dashboard() {
             console.log(cnt)
             let d = [...data]
             for (let obj of d) {
-                obj.latest=false
+                obj.latest = false
             }
-            d.push({df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv', 
-            df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv', 
-            code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",  
-            step_id: `${d.length + 1}`, latest: true,
-            explanation: "Fill missing values on column John using forward fill method'\n'",
+            d.push({
+                df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv',
+                df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv',
+                code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",
+                step_id: `${d.length + 1}`, latest: true,
+                explanation: "Fill missing values on column John using forward fill method'\n'",
             })
             setData(d)
             console.log(d)
             let df = await downloadAndParseCSV('https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv');
         })
-      });
+    });
 
     const handleButtonClick = async (step_id: any) => {
         setCurr(step_id);
@@ -354,7 +356,8 @@ if __name__ == "__main__":
                             <div className="flex flex-col w-full gap-2">
                                 <h4 className="mb-1 text-sm font-medium leading-none">Provide further instructions to
                                     the agents.</h4>
-                                <h4 className="mb-4 text-sm font-medium leading-none text-red-600">Bidirectional communication with agents is still under development.</h4>
+                                <h4 className="mb-4 text-sm font-medium leading-none text-red-600">Bidirectional
+                                    communication with agents is still under development.</h4>
                                 <Textarea placeholder="Type your message here." className="flex-grow mb-2"/>
                                 <Button onClick={handleQueueDataButtonClick}>Send message</Button>
                             </div>
