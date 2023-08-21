@@ -114,12 +114,12 @@ export default function Dashboard() {
         // },
     ];
     const [data, setData] = useState(init);
-    const arr: unknown[] = [["Stephen","Tyler","7452 Terrace At the Plaza road","SomeTown","SD", "91234"], ["John Da Man","Repici","120 Jefferson St.","Riverside", "NJ","08075"], ["Jack","McGinnis","220 hobo Av.","Phila", "PA","09119"], ["John","Doe","120 jefferson st.","Riverside", "NJ", "08075"], ["4"]]
+    const arr: unknown[] = [["Stephen","Tyler","7452 Terrace At the Plaza road","SomeTown","SD", "91234"], ["John Da Man","Repici","120 Jefferson St.","Riverside", "NJ","08075"], ["Jack","McGinnis","220 hobo Av.","Phila", "PA","09119"], ["John","Doe","120 jefferson st.","Riverside", "NJ", "08075"]]
     const h = ["First Name","Last Name","Address 1","Address 2", "Postcode"
     ]
     const [frames, setFrames] = useState([{}, {}])
     const [frame, setFrame] = useState(arr)
-    const [headers, setHeaders] = useState(arr)
+    const [headers, setHeaders] = useState(h)
     const [curr, setCurr] = useState("");
     const [cnt, setCnt] = useState(0);
 
