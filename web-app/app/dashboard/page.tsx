@@ -10,6 +10,7 @@ import Link from "next/link";
 import {Loader2} from "lucide-react"
 import {ListStart} from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
 
 import {
     Table,
@@ -72,7 +73,6 @@ async function getTasksByUser(email: string) {
     return data;
 }
 
-
 export default function Dashboard() {
     const params = useSearchParams()
     let email = params.get("email")
@@ -80,63 +80,92 @@ export default function Dashboard() {
     console.log(tid)
     if (!email) email = "guest@tidyai.tech"
     const init = [
-        {
-            step_id: "1_1",
-            created_at: "2023-08-19T13:22:09.06096+00:00",
-            user_id: "alex@example.com",
-            transformation: "start",
-            explanation: "This is the first step",
-            df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
-            df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
-            code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-            latest: false,
-        },
-        {
-            step_id: "1_2",
-            created_at: "2023-08-20T14:23:09.06096+00:00",
-            user_id: "alex@example.com",
-            transformation: "Second State",
-            explanation: "This is the second step",
-            df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
-            df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
-            code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-            latest: false,
-        },
-        {
-            step_id: "1_3",
-            created_at: "2023-08-21T15:03:10.06096+00:00",
-            user_id: "alex@example.com",
-            transformation: "Third State",
-            explanation: "This is the third step",
-            df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
-            df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
-            code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-            latest: false,
-        },
-        {
-            step_id: "1_4",
-            created_at: "2023-08-21T15:03:10.06096+00:00",
-            user_id: "alex@example.com",
-            transformation: "Third State",
-            explanation: "This is the third step",
-            df_frontend: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
-            df_after_url: "",
-            code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-            latest: true,
-        },
+        // {
+        //     step_id: "1_1",
+        //     explanation: "This is the first step",
+        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
+        //     df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
+        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
+        //     latest: false,
+        // },
+        // {
+        //     step_id: "1_2",
+        //     explanation: "This is the second step",
+        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
+        //     df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
+        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
+        //     latest: false,
+        // },
+        // {
+        //     step_id: "1_3",
+        //     explanation: "This is the third step",
+        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
+        //     df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
+        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
+        //     latest: false,
+        // },
+        // {
+        //     step_id: "1_4",
+        //     explanation: "This is the third step",
+        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
+        //     df_after_url: "",
+        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
+        //     latest: true,
+        // },
     ];
     const [data, setData] = useState(init);
     const arr: unknown[] = [["a"], ["1"], ["2"], ["3"], ["4"]]
     const h = ["a"]
+    const [frames, setFrames] = useState([{}, {}])
     const [frame, setFrame] = useState(arr)
     const [headers, setHeaders] = useState(arr)
     const [curr, setCurr] = useState("");
+    const [cnt, setCnt] = useState(0);
 
     const queue = 0;
     const [queueData, setQueueData] = useState(queue);
     const handleQueueDataButtonClick = () => {
         setQueueData(prevQueueData => prevQueueData + 1);
     };
+
+    useEffect(() => {
+        const eventSource = new EventSource(`https://agent-dnrxaaj6sq-lm.a.run.app/stream?task_id=${tid}`);
+        eventSource.addEventListener("open", (e) => {
+            console.log("open")
+        })
+        eventSource.addEventListener(`Code executed (new_step_count)`, (e) => {
+            let d = [...data]
+            for (let obj of d) {
+                obj.latest=false
+            }
+            d.push({df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv', 
+            df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv', 
+            code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",  
+            step_id: `${d.length + 1}`, latest: true,
+            explanation: "Fill missing values on column John using forward fill method'\n'",
+            })
+            setData(d)
+            console.log(d)
+            let df = downloadAndParseCSV('https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv');
+        })
+        eventSource.addEventListener(`Explanation and code generated (new_code_and_explanation)`, async (e) => {
+            console.log("cnt")
+            console.log(cnt)
+            let d = [...data]
+            for (let obj of d) {
+                obj.latest=false
+            }
+            d.push({df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv', 
+            df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv', 
+            code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",  
+            step_id: `${d.length + 1}`, latest: true,
+            explanation: "Fill missing values on column John using forward fill method'\n'",
+            })
+            setData(d)
+            console.log(d)
+            let df = await downloadAndParseCSV('https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv');
+        })
+      });
 
     const handleButtonClick = async (step_id: any) => {
         setCurr(step_id);
