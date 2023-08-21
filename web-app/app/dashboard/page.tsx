@@ -114,8 +114,9 @@ export default function Dashboard() {
         // },
     ];
     const [data, setData] = useState(init);
-    const arr: unknown[] = [["a"], ["1"], ["2"], ["3"], ["4"]]
-    const h = ["a"]
+    const arr: unknown[] = [["Stephen","Tyler","7452 Terrace At the Plaza road","SomeTown","SD", "91234"], ["John Da Man","Repici","120 Jefferson St.","Riverside", "NJ","08075"], ["Jack","McGinnis","220 hobo Av.","Phila", "PA","09119"], ["John","Doe","120 jefferson st.","Riverside", "NJ", "08075"], ["4"]]
+    const h = ["First Name","Last Name","Address 1","Address 2", "Postcode"
+    ]
     const [frames, setFrames] = useState([{}, {}])
     const [frame, setFrame] = useState(arr)
     const [headers, setHeaders] = useState(arr)
@@ -294,7 +295,7 @@ if __name__ == "__main__":
 
     const downloadAndParseCSV = async (url: any) => {
         try {
-            const response = await fetch(url);
+            const response = await fetch('../../public/addresses.csv');
             const csvData = await response.text();
             const parsed = Papa.parse(csvData);
             console.log(parsed);
