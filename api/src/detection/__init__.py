@@ -62,7 +62,10 @@ class Detector:
             buf = io.StringIO()
             df.info(buf=buf)
             info_str = buf.getvalue()
-            self.openai_summary = self.openai_summary + "\n\nColumns:\n" + '\n'.join(list(df.columns)) + "\n\nINFO: " + info_str
+
+            head_str = df.head().to_string()
+
+            self.openai_summary = self.openai_summary + "\n\nColumns:\n" + '\n'.join(list(df.columns)) + "\n\nINFO: " + info_str + "\n\nHEAD: " + head_str
         return self.openai_summary
 
     def get_steps_from_initial_df(self, df) -> Steps:
@@ -120,27 +123,6 @@ def general_summary(df, n=10):
     }
 
     return summary
-
-
-# def datatype_summary(df):
-#     """
-#     UNUSED
-#     Provides the data types for each column.
-#
-#     Parameters:
-#     - df: DataFrame
-#
-#     Returns:
-#     - Instructions what transformations to do base don the data types.
-#     """
-#     overview = pd.DataFrame({
-#         'Data Type': df.dtypes,
-#         'Columns': df.columns,
-#     })
-#
-#     steps = get_steps_from_summary(df, overview)
-#
-#     return steps
 
 
 def unique_values_summary(df):

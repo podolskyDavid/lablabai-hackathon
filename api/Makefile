@@ -23,6 +23,10 @@ clean:
 cloud_run:
 	gcloud run deploy $(DOCKER_IMAGE) --source . --region europe-central2 --allow-unauthenticated
 
+cloud_run_agent:
+	gcloud run deploy agent --source . --region europe-central2 --allow-unauthenticated
+
+
 update_secrets:
 	@ENV_VARS=$$(awk -F "=" '{print $$1"="substr($$0, index($$0, $$2))}' .env | tr '\n' ',') ;\
 	echo "Environment variables to update: $$ENV_VARS" ;\

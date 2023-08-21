@@ -1,6 +1,7 @@
 import pandas as pd
 import requests
 from pandas import DataFrame
+from requests import Response
 
 from src.database import Task
 from src.detection import Detector, Steps
@@ -25,7 +26,7 @@ REGENERATE_TO_FIX = """
 Here is the current code
 {code}
 Here is the error message
-{error_msg}
+{error_message}
 Here is the explanation
 {explanation}
 Fix the code to make it work. avoid any other possible mistakes in this area. be smart.
@@ -53,16 +54,16 @@ class Agent:
         print("Response %s Content %s" % (response, response.content))
         if response.status_code != 200:
             print("regenerating code wait...")
-            error_msg = str(response.content.decode('utf-8'))
-            self.error_message += "\n\n Error logs: " + error_msg
+            # take last two line
+            self.error_message += "\n\n Error logs: " + '\n'.join(str(response.content.decode('utf-8')).splitlines()[-4:])
             raise Exception("Error in executing code")
     
-    @staticmethod
-    def regenerate_to_fix(code, error_msg, explanation):
+
+    def regenerate_to_fix(self):
         """
         Regenerate the code if there is an error in execution.
         """
-        prompt = REGENERATE_TO_FIX.format(code=code, error_msg=error_msg, explanation=explanation)
+        prompt = REGENERATE_TO_FIX.format(code=self.temp_code, error_message=self.error_message, explanation=self.curr_step)
         params = {
             "model": "gpt-4",
             "max_tokens": 1000,
@@ -82,63 +83,67 @@ class Agent:
    
 
         
-    @retry(stop=stop_after_attempt(3), wait=wait_fixed(0.5))
-    def run_single_step(self, step: str, summary: str, columns: list[str]):
+    @retry(stop=stop_after_attempt(5), wait=wait_fixed(0.5))
+    def run_single_step(self):
         if self.error_message:
-            self.code = self.regenerate_to_fix(self.code, self.error_message, step)
+            self.temp_code = self.regenerate_to_fix()
         else:
             print("...generating the code...")
-            self.code = self.tro.generate_code(step, summary, columns)
+            self.temp_code = self.tro.generate_code(self.curr_step, self.curr_summary, self.initial_df.columns)
             
-        print(self.code[:50])
+        print(self.temp_code)
         print('=' * 70 + '  EXECUTING CODE   ' + '=' * 70)
-        self.execute(self.code, step)
-        self.code = ''
+        self.execute(self.temp_code, self.curr_step)
+        self.code = self.temp_code
 
 
     def __init__(self, initial_df: DataFrame, task: Task, task_name: str | None = None):
-        self.current_step_message = ''
+        self.temp_code = ''
         self.error_message = ''
-        self.code = ''
+        self.code = None
         self.task = task
+        self.step_count = task.max_step_count()
         self.task_name = task_name if task_name is not None else self.task.task_name
-        self.detector = Detector(task)
-        print('=' * 70 + '  CREATING STEPS   ' + '=' * 70)
-        initial_steps: Steps = self.detector.get_steps_from_initial_df(initial_df)
-        print("INITIAL STEP\n", initial_steps[0])
+        self.initial_df = initial_df
+        self.curr_step = None
 
-        self.tro = TransformationOrchestrator(task)
-        curr_step: str = get_first_step(initial_steps)
-        curr_summary: str = self.detector.get_initial_summary(initial_df)
+    def run(self):
+        self.detector = Detector(self.task)
+        print('=' * 70 + '  CREATING STEPS   ' + '=' * 70)
+        initial_steps: Steps = self.detector.get_steps_from_initial_df(self.initial_df)
+        print("INITIAL STEP\n", initial_steps[0])
+        self.tro = TransformationOrchestrator(self.task)
+        self.curr_step: str = get_first_step(initial_steps)
+        self.curr_summary: Dict[str, str] = self.detector.get_initial_summary(self.initial_df)
         for counter in range(1, MAX_NUM_STEPS):
             print('=' * 70 + f' ATTEMPTING STEP {counter} ' + '=' * 70)
-            print(curr_step)
-
-            print('=' * 70 + '  GENERATING CODE  ' + '=' * 70)
-            self.run_single_step(curr_step, curr_summary, initial_df.columns)
+            print("Current step", self.curr_step)
+            self.run_single_step()
+            self.step_count = self.task.max_step_count()
             self.error_message = ''
-
-            print('Max step count in DB: ', task.max_step_count())
             if counter == MAX_NUM_STEPS - 1:
                 break
 
             print('=' * 70 + '  CREATING STEPS   ' + '=' * 70)
-            curr_step = get_first_step(self.detector.get_steps_from_former_steps())
-            curr_summary, past_steps = self.detector.get_summary_from_former_steps()
+            self.curr_step = get_first_step(self.detector.get_steps_from_former_steps())
+            self.curr_summary, _ = self.detector.get_summary_from_former_steps()
+
+            print(self.task.get_latest_df().head())
     
-    def custom_message_execution(self, message: str):
-        self.current_step_message = message
-        self.error_message = ''
-        self.code = ''
-        self.run_single_step(message, self.detector.get_initial_summary(self.task.get_latest_df()), self.task.get_latest_df().columns)
+    # def custom_message_execution(self, message: str):
+    #     self.current_step_message = message
+    #     self.error_message = ''
+    #     self.code = ''
+    #     self.run_single_step(message, self.detector.get_initial_summary(self.task.get_latest_df()), self.task.get_latest_df().columns)
 
 
 
 if __name__ == '__main__':
     # initial_df = pd.read_csv('test_csv/BL-Flickr-Images-Book.csv')
     initial_df = pd.read_csv('../test_csv/Financials.csv')
-    task = new_task(user_id='robert5@coder.com', task_name='coding', initial_df=initial_df)
+    task = new_task(user_id='robert6@coder.com', task_name='coding', initial_df=initial_df)
     # agent = Agent(initial_df, task)
     agent = Agent(initial_df, task, task_name='coding')
-    agent.custom_message_execution("Convert column 'date' to datetime format.")
+    # agent.custom_message_execution("Convert column 'date' to datetime format.")
+    agent.run()
 

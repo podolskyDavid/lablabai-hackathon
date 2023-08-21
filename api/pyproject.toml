@@ -58,6 +58,7 @@ toml = "0.10.2"
 tzdata = "2023.3"
 yarl = "1.9.2"
 tenacity = "^8.2.3"
+sse-starlette = "^1.6.5"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.23.3"

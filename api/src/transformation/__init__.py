@@ -123,8 +123,10 @@ class TransformationOrchestrator:
         It should contain a function definition and a call to that function.
         """
         transformation = self._select_transformation(step, summary, columns)
+        transformation_comment = "# Using the following transformation predefined in transformations.py: "
         if transformation == "None":
             function_definition = self._generate_transformation(step, summary)
+            transformation_comment = "# Using the following function generated with toolmaker.py: "
         else:
             try:
                 function_definition: str = get_function_code_and_docstring(transformation)
@@ -133,6 +135,7 @@ class TransformationOrchestrator:
                       f'because the function {transformation} was selected '
                       f'but it does not exist in transformations.py (likely hallucinated) ...')
                 function_definition = self._generate_transformation(step, summary)
+                transformation_comment = "# Using the following function generated with toolmaker.py: "
 
 
         prompt: str = GENERATE_FUNCTION_CALL_PROMPT \
@@ -177,10 +180,10 @@ class TransformationOrchestrator:
             print('Generated:')
             print(imports)
             print('!!! Consider changing the GENERATE_FUNCTION_CALL_PROMPT !!!')
-            imports = '# No imports code was generated'
+            imports = '# No code was generated to import the necessary libraries'
 
         return imports + \
-            '\n# Transformation to be applied:\n' + \
+            '\n' + transformation_comment + '\n' + \
             function_definition + \
             '\n# Call the function above\n' + \
             function_call

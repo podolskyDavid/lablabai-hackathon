@@ -1,10 +1,7 @@
 from typing import *
-
-import pandas as pd
 import io
 import openai
 import re
-from pandas import DataFrame
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from src.detection.prompts import DETECTOR_PROMPT

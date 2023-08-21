@@ -19,4 +19,4 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY ./src /code/src
 
-CMD ["sh", "-c", "uvicorn src.python_execution.server:app --host 0.0.0.0 --port 80"]
+CMD ["sh", "-c", "uvicorn src.agent.app:app --host 0.0.0.0 --port 80"]
