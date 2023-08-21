@@ -46,7 +46,7 @@ class Agent:
     def execute(self, code: str, explanation: str):
         for line in code.splitlines():
             if "df = pd.read_csv(" in line:
-                code = code.replace("df = pd.read_csv('df.csv')", "")
+                code = code.replace(line, "")
         response = requests.post(EXECUTOR_ENDPOINT, params={
             'code': code, 'explanation': explanation, 'task_name': self.task_name,
             'task_id': self.task.task_id, 'user_id': self.task.user_id
@@ -139,8 +139,8 @@ class Agent:
 
 
 if __name__ == '__main__':
-    # initial_df = pd.read_csv('test_csv/BL-Flickr-Images-Book.csv')
-    initial_df = pd.read_csv('../test_csv/Financials.csv')
+    initial_df = pd.read_csv('/Users/robertlukoshko/Downloads/archive (1)/marketing_campaign.csv')
+    # initial_df = pd.read_csv('../test_csv/Financials.csv')
     task = new_task(user_id='robert6@coder.com', task_name='coding', initial_df=initial_df)
     # agent = Agent(initial_df, task)
     agent = Agent(initial_df, task, task_name='coding')
