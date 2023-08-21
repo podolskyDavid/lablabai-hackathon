@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import React, {FC} from 'react';
 import {useSearchParams} from 'next/navigation'
 import Papa from 'papaparse';
 
@@ -43,21 +43,23 @@ import 'highlight.js/styles/github-dark.css';
 import {createClient} from '@supabase/supabase-js'
 import {useState, useEffect, useRef} from "react";
 
-const CodeBlock = ({language, value}) => {
-    const codeEl = useRef(null);
+const CodeBlock: FC<{ language: string, value: string }> = ({ language, value }) => {
+    const codeEl = useRef<HTMLElement | null>(null);
 
     useEffect(() => {
-        hljs.highlightBlock(codeEl.current);
+        if (codeEl && codeEl.current) {
+            hljs.highlightBlock(codeEl.current);
+        }
     }, []);
 
     return (
         <pre className="border-white rounded-md overflow-x-scroll">
-      <code ref={codeEl} className={language}>
-        {value}
-      </code>
-    </pre>
+            <code ref={codeEl} className={language}>
+                {value}
+            </code>
+        </pre>
     );
-};
+}
 
 async function getTasksByUser(email: string) {
     const supabase =
@@ -138,9 +140,9 @@ export default function Dashboard() {
         setCurr(step_id);
         const fr = await downloadAndParseCSV(data.find(obj => obj.step_id === step_id)?.df_frontend)
         if (fr) {
-            setFrame(fr.data.slice(1))
-            setHeaders(fr.data[0])
-            console.log(headers)
+            setFrame(fr.data.slice(1));
+            setHeaders(fr.data[0] as string[]);
+            console.log(headers);
         }
     };
 
@@ -236,7 +238,7 @@ if __name__ == "__main__":
                             )}
                         </div>
                     ))}
-                    <div className="space-y-2 mt-10">
+                    <div className="max-h-4 space-y-2 mt-10">
                         {
                             Array.from({length: queueData}, (_, index) => (
                                 <Button
@@ -284,7 +286,7 @@ if __name__ == "__main__":
                     <div className="pr-2">{email}</div>
                 </div>
             </div>
-            <div className="flex flex-col lg:flex-row flex-grow">
+            <div className="flex flex-col lg:flex-row flex-grow h-screen w-screen">
                 <div className="lg:w-7/12 bg-transparent p-4 border border-white rounded-sm m-4">
                     <ScrollArea className="h-full w-full">
                         <Table>
@@ -293,26 +295,25 @@ if __name__ == "__main__":
                                 <TableRow>
                                     {headers && headers.map((rowData, index) =>
                                         (<TableHead key={index}>
-                                            {rowData.toString()}
+                                            {typeof rowData === 'string' ? rowData : String(rowData)}
                                         </TableHead>))}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {frame &&
-                                    frame.map((rowData, index) => (
-                                        <TableRow key={index}>
-                                            {rowData && rowData.map((cellData, cellIndex) => (
-                                                <TableCell key={cellIndex}>{cellData}</TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))}
+                                {Array.isArray(frame) && frame.map((rowData: any, index: number) => (
+                                    <TableRow key={index}>
+                                        {Array.isArray(rowData) && rowData.map((cellData: any, cellIndex: number) => (
+                                            <TableCell key={cellIndex}>{cellData}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
                     </ScrollArea>
                 </div>
                 <div className="lg:w-5/12 flex flex-col">
                     <div
-                        className="bg-transparent h-1/2 p-4 border border-white rounded-sm sm:mt-0 lg:mt-4 m-4 lg:ml-0 lg:mb-2">
+                        className="bg-transparent h-1/2 p-4 border border-white rounded-sm sm:mt-0 lg:mt-4 m-4 lg:ml-0 lg:mb-2 overflow-auto">
                         <AgentStepsArea/>
                     </div>
                     <div
