@@ -134,32 +134,31 @@ export default function Dashboard() {
             console.log("open")
         })
         eventSource.addEventListener(`Code executed (new_step_count)`, (e) => {
+            let string = JSON.parse(e.data)
             let d = [...data]
             for (let obj of d) {
                 obj.latest=false
             }
-            d.push({df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv', 
-            df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv', 
-            code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",  
-            step_id: `${d.length + 1}`, latest: true,
-            explanation: "Fill missing values on column John using forward fill method'\n'",
+            d.push({df_after_url: string.df_after_url, 
+            df_frontend_url: string.df_frontend_url, 
+            code: string.code,
+            step_id: `${string.step_count + 1}`, latest: true,
+            explanation: string.explanation,
             })
             setData(d)
             console.log(d)
             let df = downloadAndParseCSV('https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv');
         })
         eventSource.addEventListener(`Explanation and code generated (new_code_and_explanation)`, async (e) => {
-            console.log("cnt")
-            console.log(cnt)
+            let string = JSON.parse(e.data)
             let d = [...data]
             for (let obj of d) {
                 obj.latest=false
             }
-            d.push({df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv', 
-            df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv', 
-            code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",  
-            step_id: `${d.length + 1}`, latest: true,
-            explanation: "Fill missing values on column John using forward fill method'\n'",
+            d.push({
+            code: string.code,
+            step_id: `${string.step_count + 1}`, latest: true,
+            explanation: string.explanation,
             })
             setData(d)
             console.log(d)
