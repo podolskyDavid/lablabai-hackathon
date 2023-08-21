@@ -76,48 +76,17 @@ async function getTasksByUser(email: string) {
 export default function Dashboard() {
     const params = useSearchParams()
     let email = params.get("email")
+    console.log(email)
     let tid = params.get("taskid")
     console.log(tid)
     if (!email) email = "guest@tidyai.tech"
-    const init: any[] | (() => any[]) = [
-        // {
-        //     step_id: "1_1",
-        //     explanation: "This is the first step",
-        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
-        //     df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_1.csv",
-        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-        //     latest: false,
-        // },
-        // {
-        //     step_id: "1_2",
-        //     explanation: "This is the second step",
-        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
-        //     df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_1_2.csv",
-        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-        //     latest: false,
-        // },
-        // {
-        //     step_id: "1_3",
-        //     explanation: "This is the third step",
-        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
-        //     df_after_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
-        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-        //     latest: false,
-        // },
-        // {
-        //     step_id: "1_4",
-        //     explanation: "This is the third step",
-        //     df_frontend_url: "https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/alex@example.com/df_frontend_2_16.csv",
-        //     df_after_url: "",
-        //     code: "def main():\n    print(\"Hello World!\")\n\nif __name__ == \"__main__\":\n    main()",
-        //     latest: true,
-        // },
-    ];
+    const init: any[] | (() => any[]) = [];
     const [data, setData] = useState(init);
     const arr: unknown[] = [["Stephen","Tyler","7452 Terrace At the Plaza road","SomeTown","SD", "91234"], ["John Da Man","Repici","120 Jefferson St.","Riverside", "NJ","08075"], ["Jack","McGinnis","220 hobo Av.","Phila", "PA","09119"], ["John","Doe","120 jefferson st.","Riverside", "NJ", "08075"], ["Joan the bone", "Anne","Jet","9th", "at Terrace plc","Desert City","CO","00123"], ["Andrew", "John", "1st Str.", "New York", "NY", "10000"]]
     const h = ["First Name","Last Name","Address 1","Address 2", "State", "Postcode"]
     const [frames, setFrames] = useState([{}, {}])
     const [frame, setFrame] = useState(arr)
+    const [df, setDf] = useState<any[] | null>(null);
     const [headers, setHeaders] = useState(h)
     const [curr, setCurr] = useState("");
     const [cnt, setCnt] = useState(0);
@@ -129,37 +98,23 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
+        // const eventSource = new EventSource(`http://0.0.0.0:80/stream?task_id=${tid}`);
         const eventSource = new EventSource(`https://agent-dnrxaaj6sq-lm.a.run.app/stream?task_id=${tid}`);
+        // const eventSource = new EventSource(`https://agent-dnrxaaj6sq-lm.a.run.app/stream?task_id=${tid}`);
         eventSource.addEventListener("open", (e) => {
             console.log("open")
         })
-        eventSource.addEventListener(`Code executed (new_step_count)`, (e) => {
+        eventSource.addEventListener(`Code executed (new_step_count)`, async (e) => {
             let d = [...data]
-            console.log(e.data)
             let json_parsed = JSON.parse(e.data)
             console.log(json_parsed)
-            let df = downloadAndParseCSV(e.data.df_frontend_url);
-            console.log(df)
 
+            let df = await downloadAndParseCSV(json_parsed.df_frontend_url);
+            setDf(df);
         })
         eventSource.addEventListener(`Explanation and code generated (new_code_and_explanation)`, async (e) => {
-
-            console.log("cnt")
-            console.log(cnt)
-            let d = [...data]
-            for (let obj of d) {
-                obj.latest = false
-            }
-            d.push({
-                df_after_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_after_260_1.csv',
-                df_frontend_url: 'https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv',
-                code: "\nimport pandas as pd\n\n# Using the following function generated with toolmaker.py: \nimport pandas as pd\n\ndef fill_missing_values(df):\n    df['John'] = df['John'].fillna(method='ffill')\n    return df\n\ndf = fill_missing_values(df)\n\n# Call the function above\n\ndf = fill_missing_values(df)\n",
-                step_id: `${d.length + 1}`, latest: true,
-                explanation: "Fill missing values on column John using forward fill method'\n'",
-            })
-            setData(d)
-            console.log(d)
-            let df = await downloadAndParseCSV('https://eiruqjgfkgoknuhihfha.supabase.co/storage/v1/object/public/bucket_steps/a@ex.com/df_frontend_260_1.csv');
+            // let d = [...data]
+            // let json_parsed = JSON.parse(e.data)
         })
     });
 
@@ -167,8 +122,8 @@ export default function Dashboard() {
         setCurr(step_id);
         const fr = await downloadAndParseCSV(data.find(obj => obj.step_id === step_id)?.df_frontend)
         if (fr) {
-            setFrame(fr.data.slice(1));
-            setHeaders(fr.data[0] as string[]);
+            setFrame(fr.slice(1));
+            setHeaders(fr[0] as string[]);
             console.log(headers);
         }
     };
@@ -176,14 +131,15 @@ export default function Dashboard() {
     const {toast} = useToast()
 
     function AgentStepsArea() {
-        // useEffect(() => {
-        //     setTimeout(async () =>  {
-        //         let input = await getTasksByUser(email);
-        //         if(input) {
-        //             setData(input)
-        //         }
-        //     }, 1000)
-        // })
+        useEffect(() => {
+            setTimeout(async () =>  {
+                let input = await getTasksByUser(email || "default@email.com");
+                console.log(input)
+                if(input) {
+                    setData(input)
+                }
+            }, 50000)
+        })
 
 
         return (
@@ -196,12 +152,12 @@ export default function Dashboard() {
                                 {tag.latest ? (
                                     <Button disabled className="w-2/3 bg-green-400">
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                                        Step {tag.step_id} is running...
+                                        Step {tag.explanation} is running...
                                     </Button>
                                 ) : (
                                     <Button variant="outline" className="w-2/3"
                                             onClick={() => handleButtonClick(tag.step_id)}>
-                                        Step {tag.step_id}
+                                        Step {tag.explanation}
                                     </Button>
                                 )}
 
@@ -211,7 +167,7 @@ export default function Dashboard() {
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-[700px] overflow-auto max-h-screen">
                                         <DialogHeader>
-                                            <DialogTitle>{tag.step_id}</DialogTitle>
+                                            <DialogTitle>{tag.explanation}</DialogTitle>
                                             <DialogDescription>
                                                 {tag.explanation}
                                             </DialogDescription>
@@ -220,23 +176,7 @@ export default function Dashboard() {
                                             <div className="font-semibold">Executed code:</div>
                                             <CodeBlock
                                                 language="python"
-                                                value={`
-# This is a Python sample code
-def fibonacci(n):
-    if n <= 1:
-        return n
-    else:
-        return fibonacci(n-1) + fibonacci(n-2)
-
-def main():
-    num = 10
-    print("Fibonacci sequence:")
-    for i in range(num):
-        print(fibonacci(i))
-
-if __name__ == "__main__":
-    main()
-`}
+                                                value={tag.code}
                                             />
                                         </div>
                                         <DialogFooter className="">
@@ -287,13 +227,15 @@ if __name__ == "__main__":
         )
     }
 
-    const downloadAndParseCSV = async (url: any) => {
+    const downloadAndParseCSV = async (url: any): Promise<any> => {
         try {
             const response = await fetch(url);
             const csvData = await response.text();
-            const parsed = Papa.parse(csvData);
-            console.log(parsed);
-            return parsed;
+            const parsed = Papa.parse(csvData, {header: true, dynamicTyping: true,})
+            console.log(parsed.data[0]);
+            console.log(parsed.meta.delimiter);
+            let result = parsed.data.slice(0, 7);
+            return result
         } catch (error) {
             console.error('Error downloading or parsing the CSV file:', error);
         }
@@ -316,26 +258,26 @@ if __name__ == "__main__":
             <div className="flex flex-col lg:flex-row flex-grow h-screen w-screen">
                 <div className="lg:w-7/12 bg-transparent p-4 border border-white rounded-sm m-4">
                     <ScrollArea className="h-full w-full">
-                        <Table>
-                            <TableCaption>Resulting seven rows from the selected agent action step.</TableCaption>
-                            <TableHeader>
-                                <TableRow>
-                                    {headers && headers.map((rowData, index) =>
-                                        (<TableHead key={index}>
-                                            {typeof rowData === 'string' ? rowData : String(rowData)}
-                                        </TableHead>))}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {Array.isArray(frame) && frame.map((rowData: any, index: number) => (
-                                    <TableRow key={index}>
-                                        {Array.isArray(rowData) && rowData.map((cellData: any, cellIndex: number) => (
-                                            <TableCell key={cellIndex}>{cellData}</TableCell>
+                        {df && (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        {df && Object.keys(df[0]).map((key, index) => (
+                                            <TableHead key={index}>{key}</TableHead>
                                         ))}
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {df && df.map((row: { [key: string]: any }, index: number) => (
+                                        <TableRow key={index}>
+                                            {Object.values(row).map((value, index) => (
+                                                <TableCell key={index}>{value}</TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
                     </ScrollArea>
                 </div>
                 <div className="lg:w-5/12 flex flex-col">
