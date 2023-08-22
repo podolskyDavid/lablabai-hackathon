@@ -30,7 +30,7 @@ export default function Form() {
     };
     const router = useRouter();
     const submit = async (e: any) => {
-        // e.preventDefault(); // Prevent default form submission
+        e.preventDefault(); // Prevent default form submission
 
         const data = new FormData();
         // @ts-ignore
@@ -63,6 +63,7 @@ export default function Form() {
 
     return (
         <form className="flex flex-col h-screen" onSubmit={submit}>
+            {/*  action='./dashboard'  */}
             <div className="pt-2 pb-2 m-4 mb-0 relative group">
                 <div
                     className="absolute inset-0 bg-gradient-border z-0 group-hover:opacity-100 opacity-0 transition-opacity duration-500 rounded-md"></div>
