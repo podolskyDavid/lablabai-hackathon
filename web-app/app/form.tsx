@@ -30,36 +30,39 @@ export default function Form() {
     };
     const router = useRouter();
     const submit = async (e: any) => {
+        e.preventDefault(); // Prevent default form submission
 
-        const formURL = e.target.action
-        const data = new FormData()
+        const data = new FormData();
         // @ts-ignore
         data.append('file', file);
         data.append('user_id', email);
 
-        // POST the data to the URL of the form
-        const res = await fetch(`https://agent-dnrxaaj6sq-lm.a.run.app/upload?user_id=${email}`, {
-        // const res = await fetch(`http://0.0.0.0:80/upload?user_id=${email}`, {
-            method: "POST",
-            body: data,
-            headers: {
-                'accept': 'application/json',
-            },
-        })
-        console.log(res)
-        if(!res.ok) {
-            throw new Error('Failed to fetch data')
+        try {
+            const res = await fetch(`https://agent-dnrxaaj6sq-lm.a.run.app/upload?user_id=${email}`, {
+                method: "POST",
+                body: data,
+                headers: {
+                    'accept': 'application/json',
+                },
+            });
+            
+            if(!res.ok) {
+                throw new Error('Failed to fetch data');
+            }
+
+            const response = await res.json();
+            const tid = response.task_id;
+            setTaskId(tid);
+            const route = "./dashboard?email=" + email + "&taskid=" + tid;
+            router.push(route);
+            
+        } catch (error) {
+            console.error("Error during form submission:", error);
         }
-        const response = await res.json()
-        const tid = response.task_id;
-        console.log(tid)
-        setTaskId(tid)
-        const route = "./dashboard?email=" + email + "&taskid=" + tid;
-        router.push(route)
     }
 
     return (
-        <form className="flex flex-col h-screen" onSubmit={submit} method='post'>
+        <form className="flex flex-col h-screen" onSubmit={submit}>
             <div className="pt-2 pb-2 m-4 mb-0 relative group">
                 <div
                     className="absolute inset-0 bg-gradient-border z-0 group-hover:opacity-100 opacity-0 transition-opacity duration-500 rounded-md"></div>
