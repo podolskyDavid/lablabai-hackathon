@@ -53,7 +53,8 @@ export default function Form() {
             const response = await res.json();
             const tid = response.task_id;
             setTaskId(tid);
-            const route = "./dashboard?email=" + email + "&taskid=" + tid;
+            const route = "/dashboard?email=" + email + "&taskid=" + tid;
+
             router.push(route);
             
         } catch (error) {
@@ -96,7 +97,7 @@ export default function Form() {
                                     </div>
                                 </div>
                                 <Button asChild className="">
-                                    <Link href={"./dashboard?email=" + email}>
+                                    <Link href={"/dashboard?email=" + email}>
                                         Login
                                     </Link>
                                 </Button>
