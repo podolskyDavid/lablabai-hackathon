@@ -59,8 +59,7 @@ export default function Form() {
     }
 
     return (
-        <form className="flex flex-col h-screen" onSubmit={submit}>
-            
+        <form className="flex flex-col h-screen" onSubmit={submit} method='post'>
             <div className="pt-2 pb-2 m-4 mb-0 relative group">
                 <div
                     className="absolute inset-0 bg-gradient-border z-0 group-hover:opacity-100 opacity-0 transition-opacity duration-500 rounded-md"></div>
