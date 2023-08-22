@@ -30,7 +30,7 @@ export default function Form() {
     };
     const router = useRouter();
     const submit = async (e: any) => {
-        e.preventDefault(); // Prevent default form submission
+        // e.preventDefault(); // Prevent default form submission
 
         const data = new FormData();
         // @ts-ignore
